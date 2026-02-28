@@ -56,7 +56,7 @@ export async function initiateLogin(input: LoginInput) {
 export async function verifyOtp(input: VerifyOtpInput) {
   const user = await prisma.user.findUnique({
     where: { email: input.email },
-    select: { id: true, role: true, isActive: true, ...userSelect },
+    select: userSelect,
   });
 
   if (!user || !user.isActive) {
