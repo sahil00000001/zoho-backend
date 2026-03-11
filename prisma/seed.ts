@@ -60,11 +60,11 @@ async function main() {
   // ── Admin User ───────────────────────────────────────────────
   const adminDept = departments[1]; // HR
   const admin = await prisma.user.upsert({
-    where: { email: 'sahil.vashisht@podtech.com' },
+    where: { email: 'vashishtsahil9999@gmail.com' },
     update: {},
     create: {
       employeeId: 'EMP000',
-      email: 'sahil.vashisht@podtech.com',
+      email: 'vashishtsahil9999@gmail.com',
       firstName: 'Admin',
       lastName: 'User',
       role: 'ADMIN',
