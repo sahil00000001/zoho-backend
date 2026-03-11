@@ -22,13 +22,12 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     return;
   }
 
-  // Generic fallback — expose details temporarily for debugging
-  const errMsg = err instanceof Error ? err.message : String(err);
+  // Generic fallback
   console.error('[UnhandledError]', err);
   sendError({
     res,
     code: 'INTERNAL_SERVER_ERROR',
-    message: `DEBUG: ${errMsg}`,
+    message: 'An unexpected error occurred',
     statusCode: 500,
   });
 }
