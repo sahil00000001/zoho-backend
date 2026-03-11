@@ -11,6 +11,8 @@ import authRoutes from './routes/auth.routes';
 import attendanceRoutes from './routes/attendance.routes';
 import leaveRoutes from './routes/leave.routes';
 import leaveTypeRoutes from './routes/leaveType.routes';
+import usersRoutes from './routes/users.routes';
+import dashboardRoutes from './routes/dashboard.routes';
 
 const app = express();
 
@@ -35,6 +37,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/leaves', leaveRoutes);
 app.use('/api/leave-types', leaveTypeRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // ── 404 handler ───────────────────────────────────────────────────────────
 app.use((_req, res) => {
