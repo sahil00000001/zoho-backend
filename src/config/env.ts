@@ -21,11 +21,6 @@ export const env = {
   // OTP
   OTP_EXPIRES_MINUTES: parseInt(process.env.OTP_EXPIRES_MINUTES ?? '10', 10),
 
-  // Sender email address (the mailbox that sends OTP emails via Graph API)
-  SMTP_USER: required('SMTP_USER'),
-
-  // Azure AD — Microsoft Graph API for email
-  AZURE_TENANT_ID: required('AZURE_TENANT_ID'),
-  AZURE_CLIENT_ID: required('AZURE_CLIENT_ID'),
-  AZURE_CLIENT_SECRET: required('AZURE_CLIENT_SECRET'),
+  // Resend (email)
+  RESEND_API_KEY: required('RESEND_API_KEY'),
 } as const;
