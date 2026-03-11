@@ -21,11 +21,11 @@ export const env = {
   // OTP
   OTP_EXPIRES_MINUTES: parseInt(process.env.OTP_EXPIRES_MINUTES ?? '10', 10),
 
-  // SMTP
-  SMTP_HOST: required('SMTP_HOST'),
-  SMTP_PORT: parseInt(process.env.SMTP_PORT ?? '587', 10),
-  SMTP_SECURE: process.env.SMTP_SECURE === 'true',
+  // Sender email address (the mailbox that sends OTP emails via Graph API)
   SMTP_USER: required('SMTP_USER'),
-  SMTP_PASS: required('SMTP_PASS'),
-  SMTP_FROM: process.env.SMTP_FROM ?? 'Employee Portal <noreply@company.com>',
+
+  // Azure AD — Microsoft Graph API for email
+  AZURE_TENANT_ID: required('AZURE_TENANT_ID'),
+  AZURE_CLIENT_ID: required('AZURE_CLIENT_ID'),
+  AZURE_CLIENT_SECRET: required('AZURE_CLIENT_SECRET'),
 } as const;
