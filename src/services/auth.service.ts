@@ -47,16 +47,21 @@ export async function initiateLogin(input: LoginInput) {
     },
   });
 
+  let emailSent = false;
   try {
     await sendOtpEmail(user.email, code, user.firstName);
+    emailSent = true;
   } catch (emailErr) {
-    // Log SMTP error but don't fail the request — OTP is stored in DB
     console.error('[Auth] SMTP error (non-fatal):', emailErr);
-    // Always log OTP so it's visible in server logs for debugging
     console.log(`[Auth] OTP for ${user.email}: ${code}`);
   }
 
-  return { message: 'If this email is registered, an OTP has been sent.' };
+  // In development, include OTP in response so login works without email
+  const isDev = env.NODE_ENV !== 'production';
+  return {
+    message: 'If this email is registered, an OTP has been sent.',
+    ...(isDev && { devOtp: code, emailSent }),
+  };
 }
 
 // ─── Verify OTP & Issue Tokens ─────────────────────────────────────────────
