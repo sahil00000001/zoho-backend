@@ -104,6 +104,7 @@ model User {
   skills           Skill[]
   certifications   Certification[]
   kraDocuments     KRADocument[]
+  announcements    Announcement[]   @relation("AnnouncementAuthor")
 }
 
 model OTP {
@@ -355,9 +356,9 @@ model ITProvision {
 // ─────────────────────────────────────────
 
 model UserProfile {
-  id                String   @id @default(uuid())
-  userId            String   @unique
-  photoUrl          String?  @db.Text
+  id                String    @id @default(uuid())
+  userId            String    @unique
+  photoUrl          String?   @db.Text
   bio               String?
   address           String?
   city              String?
@@ -366,9 +367,10 @@ model UserProfile {
   emergencyName     String?
   emergencyPhone    String?
   emergencyRelation String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  user              User     @relation(fields: [userId], references: [id])
+  dateOfBirth       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  user              User      @relation(fields: [userId], references: [id])
 }
 
 model Skill {
@@ -403,4 +405,34 @@ model KRADocument {
   mimeType   String?
   uploadedAt DateTime @default(now())
   user       User     @relation(fields: [userId], references: [id])
+}
+
+// ─────────────────────────────────────────
+// Announcements
+// ─────────────────────────────────────────
+
+enum AnnouncementType {
+  COMPANY
+  DEPARTMENT
+}
+
+enum AnnouncementPriority {
+  HIGH
+  NORMAL
+  LOW
+}
+
+model Announcement {
+  id           String               @id @default(uuid())
+  title        String
+  content      String               @db.Text
+  type         AnnouncementType     @default(COMPANY)
+  priority     AnnouncementPriority @default(NORMAL)
+  departmentId String?
+  expiresAt    DateTime?
+  isPinned     Boolean              @default(false)
+  createdById  String
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  createdBy    User                 @relation("AnnouncementAuthor", fields: [createdById], references: [id])
 }

@@ -18,6 +18,7 @@ import holidayRoutes from './routes/holiday.routes';
 import compoffRoutes from './routes/compoff.routes';
 import onboardingRoutes from './routes/onboarding.routes';
 import profileRoutes from './routes/profile.routes';
+import announcementRoutes from './routes/announcement.routes';
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.use('/api/holidays', holidayRoutes);
 app.use('/api/compoffs', compoffRoutes);
 app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/announcements', announcementRoutes);
 
 // ── 404 handler ───────────────────────────────────────────────────────────
 app.use((_req, res) => {

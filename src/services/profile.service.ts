@@ -30,11 +30,17 @@ export async function upsertProfile(userId: string, data: {
   emergencyName?: string;
   emergencyPhone?: string;
   emergencyRelation?: string;
+  dateOfBirth?: string;
 }) {
+  const { dateOfBirth, ...rest } = data;
+  const profileData = {
+    ...rest,
+    ...(dateOfBirth !== undefined ? { dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined } : {}),
+  };
   return prisma.userProfile.upsert({
     where: { userId },
-    create: { userId, ...data },
-    update: { ...data, updatedAt: new Date() },
+    create: { userId, ...profileData },
+    update: { ...profileData, updatedAt: new Date() },
   });
 }
 
