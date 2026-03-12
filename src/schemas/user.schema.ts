@@ -7,8 +7,8 @@ export const createUserSchema = z.object({
   role: z.enum(['EMPLOYEE', 'MANAGER', 'HR', 'ADMIN']),
   designation: z.string().min(1).max(100).optional(),
   phoneNumber: z.string().optional(),
-  departmentId: z.string().uuid().optional(),
-  managerId: z.string().uuid().optional(),
+  departmentId: z.string().uuid().optional().or(z.literal('')).transform(v => v || undefined),
+  managerId: z.string().uuid().optional().or(z.literal('')).transform(v => v || undefined),
   joiningDate: z.string().optional(), // ISO date string
 });
 
