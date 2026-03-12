@@ -21,6 +21,7 @@ export const env = {
   // OTP
   OTP_EXPIRES_MINUTES: parseInt(process.env.OTP_EXPIRES_MINUTES ?? '10', 10),
 
-  // Resend (email)
-  RESEND_API_KEY: required('RESEND_API_KEY'),
+  // Gmail SMTP
+  SMTP_USER: required('SMTP_USER'),
+  SMTP_PASS: required('SMTP_PASS'),
 } as const;
