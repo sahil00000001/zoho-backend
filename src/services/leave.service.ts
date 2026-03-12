@@ -124,20 +124,25 @@ export async function cancelLeave(leaveId: string, userId: string) {
 export async function getLeaveBalance(userId: string) {
   const leaveTypes = await prisma.leaveType.findMany({ where: { isActive: true } });
   const currentYear = new Date().getFullYear();
+  const yearStart = new Date(`${currentYear}-01-01`);
 
   const balances = await Promise.all(
     leaveTypes.map(async (lt) => {
-      const used = await prisma.leave.count({
-        where: {
-          userId,
-          leaveTypeId: lt.id,
-          status: 'APPROVED',
-          startDate: { gte: new Date(`${currentYear}-01-01`) },
-        },
+      const approvedLeaves = await prisma.leave.findMany({
+        where: { userId, leaveTypeId: lt.id, status: 'APPROVED', startDate: { gte: yearStart } },
+        select: { startDate: true, endDate: true },
       });
-      return { leaveType: lt, maxDays: lt.maxDays, usedDays: used, remainingDays: Math.max(0, lt.maxDays - used) };
+      const usedDays = approvedLeaves.reduce((sum, l) => {
+        const days = Math.ceil((new Date(l.endDate).getTime() - new Date(l.startDate).getTime()) / 86_400_000) + 1;
+        return sum + days;
+      }, 0);
+      return {
+        leaveType: lt,
+        maxDays: lt.maxDays,
+        usedDays,
+        remainingDays: Math.max(0, lt.maxDays - usedDays),
+      };
     })
   );
-
   return balances;
 }

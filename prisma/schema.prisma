@@ -39,6 +39,19 @@ enum RegularizationStatus {
   REJECTED
 }
 
+enum HolidayType {
+  NATIONAL
+  COMPANY
+  OPTIONAL
+}
+
+enum CompOffStatus {
+  EARNED
+  APPROVED
+  USED
+  EXPIRED
+}
+
 // ─────────────────────────────────────────
 // Models
 // ─────────────────────────────────────────
@@ -79,6 +92,8 @@ model User {
   otps                   OTP[]
   regularizations        AttendanceRegularization[] @relation("RegularizationEmployee")
   regularizationReviews  AttendanceRegularization[] @relation("RegularizationReviewer")
+  compOffs         CompOff[] @relation
+  compOffApprovals CompOff[] @relation("CompOffApprover")
 }
 
 model OTP {
@@ -183,6 +198,38 @@ model Leave {
 
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   leaveType LeaveType @relation(fields: [leaveTypeId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Holiday {
+  id        String      @id @default(uuid())
+  name      String
+  date      DateTime    @db.Date
+  type      HolidayType @default(COMPANY)
+  year      Int
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@unique([date])
+  @@index([year])
+}
+
+model CompOff {
+  id         String        @id @default(uuid())
+  userId     String
+  reason     String
+  earnedDate DateTime      @db.Date
+  expiresAt  DateTime      @db.Date
+  status     CompOffStatus @default(EARNED)
+  approvedBy String?
+  approvedAt DateTime?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  user     User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approver User? @relation("CompOffApprover", fields: [approvedBy], references: [id])
 
   @@index([userId])
   @@index([status])

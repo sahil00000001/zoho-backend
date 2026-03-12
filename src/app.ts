@@ -14,6 +14,8 @@ import leaveTypeRoutes from './routes/leaveType.routes';
 import usersRoutes from './routes/users.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import regularizationRoutes from './routes/regularization.routes';
+import holidayRoutes from './routes/holiday.routes';
+import compoffRoutes from './routes/compoff.routes';
 
 const app = express();
 
@@ -41,6 +43,8 @@ app.use('/api/leave-types', leaveTypeRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/attendance/regularizations', regularizationRoutes);
+app.use('/api/holidays', holidayRoutes);
+app.use('/api/compoffs', compoffRoutes);
 
 // ── 404 handler ───────────────────────────────────────────────────────────
 app.use((_req, res) => {
