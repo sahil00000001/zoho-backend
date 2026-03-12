@@ -11,8 +11,10 @@ const ATTENDANCE_INCLUDE = {
   user: { select: { firstName: true, lastName: true, employeeId: true, department: { select: { name: true } } } },
 };
 
+interface Location { lat: number; lng: number; address?: string }
+
 // ─── Check-in ──────────────────────────────────────────────────────────────
-export async function checkIn(userId: string) {
+export async function checkIn(userId: string, location?: Location) {
   const date = todayDate();
 
   const existing = await prisma.attendance.findUnique({ where: { userId_date: { userId, date } } });
@@ -24,13 +26,16 @@ export async function checkIn(userId: string) {
   const isLate = hours > 9 || (hours === 9 && minutes > 30);
 
   return prisma.attendance.create({
-    data: { userId, date, checkInTime: now, status: isLate ? 'LATE' : 'PRESENT' },
+    data: {
+      userId, date, checkInTime: now, status: isLate ? 'LATE' : 'PRESENT',
+      ...(location && { checkInLat: location.lat, checkInLng: location.lng, checkInAddress: location.address }),
+    },
     include: ATTENDANCE_INCLUDE,
   });
 }
 
 // ─── Check-out ─────────────────────────────────────────────────────────────
-export async function checkOut(userId: string) {
+export async function checkOut(userId: string, location?: Location) {
   const date = todayDate();
 
   const existing = await prisma.attendance.findUnique({ where: { userId_date: { userId, date } } });
@@ -44,7 +49,10 @@ export async function checkOut(userId: string) {
 
   return prisma.attendance.update({
     where: { id: existing.id },
-    data: { checkOutTime: now, workHours },
+    data: {
+      checkOutTime: now, workHours,
+      ...(location && { checkOutLat: location.lat, checkOutLng: location.lng, checkOutAddress: location.address }),
+    },
     include: ATTENDANCE_INCLUDE,
   });
 }

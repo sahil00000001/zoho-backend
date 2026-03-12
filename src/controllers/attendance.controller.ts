@@ -6,14 +6,18 @@ import { Role } from '@prisma/client';
 
 export async function checkIn(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const record = await attendanceService.checkIn(req.user!.userId);
+    const { lat, lng, address } = req.body ?? {};
+    const location = (lat && lng) ? { lat: Number(lat), lng: Number(lng), address } : undefined;
+    const record = await attendanceService.checkIn(req.user!.userId, location);
     sendSuccess({ res, data: record, message: 'Checked in successfully', statusCode: 201 });
   } catch (err) { next(err); }
 }
 
 export async function checkOut(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const record = await attendanceService.checkOut(req.user!.userId);
+    const { lat, lng, address } = req.body ?? {};
+    const location = (lat && lng) ? { lat: Number(lat), lng: Number(lng), address } : undefined;
+    const record = await attendanceService.checkOut(req.user!.userId, location);
     sendSuccess({ res, data: record, message: 'Checked out successfully' });
   } catch (err) { next(err); }
 }
