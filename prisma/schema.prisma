@@ -33,6 +33,12 @@ enum LeaveStatus {
   CANCELLED
 }
 
+enum RegularizationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 // ─────────────────────────────────────────
 // Models
 // ─────────────────────────────────────────
@@ -67,10 +73,12 @@ model User {
   department    Department?    @relation(fields: [departmentId], references: [id])
   manager       User?          @relation("ManagerSubordinates", fields: [managerId], references: [id])
   subordinates  User[]         @relation("ManagerSubordinates")
-  attendances   Attendance[]
-  leaves        Leave[]
-  refreshTokens RefreshToken[]
-  otps          OTP[]
+  attendances            Attendance[]
+  leaves                 Leave[]
+  refreshTokens          RefreshToken[]
+  otps                   OTP[]
+  regularizations        AttendanceRegularization[] @relation("RegularizationEmployee")
+  regularizationReviews  AttendanceRegularization[] @relation("RegularizationReviewer")
 }
 
 model OTP {
@@ -112,15 +120,42 @@ model Attendance {
   checkOutLng      Float?
   checkOutAddress  String?
   workHours        Float?
+  overtimeHours    Float?
+  isWFH            Boolean          @default(false)
   status           AttendanceStatus @default(PRESENT)
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  regularizations AttendanceRegularization[]
 
   @@unique([userId, date])
   @@index([userId])
   @@index([date])
+}
+
+model AttendanceRegularization {
+  id                String               @id @default(uuid())
+  userId            String
+  attendanceId      String?
+  date              DateTime             @db.Date
+  reason            String
+  requestedCheckIn  DateTime?
+  requestedCheckOut DateTime?
+  status            RegularizationStatus @default(PENDING)
+  reviewedBy        String?
+  reviewedAt        DateTime?
+  reviewNote        String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  user       User        @relation("RegularizationEmployee", fields: [userId], references: [id], onDelete: Cascade)
+  attendance Attendance? @relation(fields: [attendanceId], references: [id])
+  reviewer   User?       @relation("RegularizationReviewer", fields: [reviewedBy], references: [id])
+
+  @@index([userId])
+  @@index([date])
+  @@index([status])
 }
 
 model LeaveType {

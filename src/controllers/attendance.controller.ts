@@ -6,9 +6,9 @@ import { Role } from '@prisma/client';
 
 export async function checkIn(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { lat, lng, address } = req.body ?? {};
+    const { lat, lng, address, isWFH } = req.body ?? {};
     const location = (lat && lng) ? { lat: Number(lat), lng: Number(lng), address } : undefined;
-    const record = await attendanceService.checkIn(req.user!.userId, location);
+    const record = await attendanceService.checkIn(req.user!.userId, location, Boolean(isWFH));
     sendSuccess({ res, data: record, message: 'Checked in successfully', statusCode: 201 });
   } catch (err) { next(err); }
 }
@@ -33,6 +33,14 @@ export async function getMyHistory(req: AuthRequest, res: Response, next: NextFu
   try {
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 30;
     const records = await attendanceService.getMyHistory(req.user!.userId, limit);
+    sendSuccess({ res, data: records });
+  } catch (err) { next(err); }
+}
+
+export async function getMonthlyAttendance(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const month = req.query.month as string | undefined;
+    const records = await attendanceService.getMonthlyAttendance(req.user!.userId, month);
     sendSuccess({ res, data: records });
   } catch (err) { next(err); }
 }

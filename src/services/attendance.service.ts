@@ -14,7 +14,7 @@ const ATTENDANCE_INCLUDE = {
 interface Location { lat: number; lng: number; address?: string }
 
 // ─── Check-in ──────────────────────────────────────────────────────────────
-export async function checkIn(userId: string, location?: Location) {
+export async function checkIn(userId: string, location?: Location, isWFH = false) {
   const date = todayDate();
 
   const existing = await prisma.attendance.findUnique({ where: { userId_date: { userId, date } } });
@@ -27,7 +27,9 @@ export async function checkIn(userId: string, location?: Location) {
 
   return prisma.attendance.create({
     data: {
-      userId, date, checkInTime: now, status: isLate ? 'LATE' : 'PRESENT',
+      userId, date, checkInTime: now,
+      status: isLate ? 'LATE' : 'PRESENT',
+      isWFH,
       ...(location && { checkInLat: location.lat, checkInLng: location.lng, checkInAddress: location.address }),
     },
     include: ATTENDANCE_INCLUDE,
@@ -46,11 +48,12 @@ export async function checkOut(userId: string, location?: Location) {
   const workHours = existing.checkInTime
     ? parseFloat(((now.getTime() - existing.checkInTime.getTime()) / 3_600_000).toFixed(2))
     : null;
+  const overtimeHours = workHours && workHours > 9 ? parseFloat((workHours - 9).toFixed(2)) : null;
 
   return prisma.attendance.update({
     where: { id: existing.id },
     data: {
-      checkOutTime: now, workHours,
+      checkOutTime: now, workHours, overtimeHours,
       ...(location && { checkOutLat: location.lat, checkOutLng: location.lng, checkOutAddress: location.address }),
     },
     include: ATTENDANCE_INCLUDE,
@@ -64,6 +67,19 @@ export async function getTodayStatus(userId: string) {
     where: { userId_date: { userId, date } },
     include: ATTENDANCE_INCLUDE,
   }) ?? null;
+}
+
+// ─── Monthly Attendance ────────────────────────────────────────────────────
+export async function getMonthlyAttendance(userId: string, month?: string) {
+  const ref = month ? new Date(`${month}-01`) : new Date();
+  const start = new Date(Date.UTC(ref.getFullYear(), ref.getMonth(), 1));
+  const end = new Date(Date.UTC(ref.getFullYear(), ref.getMonth() + 1, 0));
+
+  return prisma.attendance.findMany({
+    where: { userId, date: { gte: start, lte: end } },
+    orderBy: { date: 'asc' },
+    include: ATTENDANCE_INCLUDE,
+  });
 }
 
 // ─── Team Attendance (Manager/Admin) ───────────────────────────────────────

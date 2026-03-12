@@ -13,6 +13,7 @@ import leaveRoutes from './routes/leave.routes';
 import leaveTypeRoutes from './routes/leaveType.routes';
 import usersRoutes from './routes/users.routes';
 import dashboardRoutes from './routes/dashboard.routes';
+import regularizationRoutes from './routes/regularization.routes';
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use('/api/leaves', leaveRoutes);
 app.use('/api/leave-types', leaveTypeRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/attendance/regularizations', regularizationRoutes);
 
 // ── 404 handler ───────────────────────────────────────────────────────────
 app.use((_req, res) => {

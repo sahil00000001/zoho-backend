@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add vercel.json)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(git add src/services/auth.service.ts)",
+      "Bash(git add DOCUMENTATION.md)"
+    ]
+  }
+}
