@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { CreateUserInput, UpdateUserInput } from '../schemas/user.schema';
+import { sendWelcomeEmail } from './email.service';
 
 const USER_SELECT = {
   id: true,
@@ -62,7 +63,7 @@ export async function createUser(input: CreateUserInput) {
   const count = await prisma.user.count();
   const employeeId = `EMP${String(count + 1).padStart(3, '0')}`;
 
-  return prisma.user.create({
+  const user = await prisma.user.create({
     data: {
       ...input,
       employeeId,
@@ -70,6 +71,12 @@ export async function createUser(input: CreateUserInput) {
     },
     select: USER_SELECT,
   });
+
+  sendWelcomeEmail(user.email, user.firstName, user.role, user.employeeId).catch(err =>
+    console.error('[User] Welcome email error:', err instanceof Error ? err.message : err),
+  );
+
+  return user;
 }
 
 export async function updateUser(id: string, input: UpdateUserInput) {
