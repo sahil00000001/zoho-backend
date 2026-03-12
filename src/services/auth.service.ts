@@ -47,13 +47,21 @@ export async function initiateLogin(input: LoginInput) {
     },
   });
 
+  let emailSent = false;
+  let emailError = '';
   try {
     await sendOtpEmail(user.email, code, user.firstName);
+    emailSent = true;
   } catch (emailErr) {
-    console.error('[Auth] Email error:', emailErr instanceof Error ? emailErr.message : emailErr);
+    emailError = emailErr instanceof Error ? emailErr.message : String(emailErr);
+    console.error('[Auth] Email error:', emailError);
   }
 
-  return { message: 'If this email is registered, an OTP has been sent.' };
+  return {
+    message: 'If this email is registered, an OTP has been sent.',
+    emailSent,
+    ...(emailError && { emailError }),
+  };
 }
 
 // ─── Verify OTP & Issue Tokens ─────────────────────────────────────────────
