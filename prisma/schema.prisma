@@ -99,6 +99,11 @@ model User {
   assetAssignments AssetAssignment[]
   assignedAssets   AssetAssignment[] @relation("AssetAssigner")
   itProvisions     ITProvision[]
+
+  profile          UserProfile?
+  skills           Skill[]
+  certifications   Certification[]
+  kraDocuments     KRADocument[]
 }
 
 model OTP {
@@ -343,4 +348,59 @@ model ITProvision {
   user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
+}
+
+// ─────────────────────────────────────────
+// Profile Models
+// ─────────────────────────────────────────
+
+model UserProfile {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  photoUrl          String?  @db.Text
+  bio               String?
+  address           String?
+  city              String?
+  state             String?
+  pincode           String?
+  emergencyName     String?
+  emergencyPhone    String?
+  emergencyRelation String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id])
+}
+
+model Skill {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  level     String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Certification {
+  id           String    @id @default(uuid())
+  userId       String
+  name         String
+  issuer       String?
+  issueDate    DateTime?
+  expiryDate   DateTime?
+  credentialId String?
+  createdAt    DateTime  @default(now())
+  user         User      @relation(fields: [userId], references: [id])
+}
+
+model KRADocument {
+  id         String   @id @default(uuid())
+  userId     String
+  title      String
+  period     String?
+  fileUrl    String   @db.Text
+  fileName   String
+  fileSize   Int?
+  mimeType   String?
+  uploadedAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
 }

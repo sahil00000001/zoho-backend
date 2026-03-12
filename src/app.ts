@@ -17,6 +17,7 @@ import regularizationRoutes from './routes/regularization.routes';
 import holidayRoutes from './routes/holiday.routes';
 import compoffRoutes from './routes/compoff.routes';
 import onboardingRoutes from './routes/onboarding.routes';
+import profileRoutes from './routes/profile.routes';
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use('/api/attendance/regularizations', regularizationRoutes);
 app.use('/api/holidays', holidayRoutes);
 app.use('/api/compoffs', compoffRoutes);
 app.use('/api/onboarding', onboardingRoutes);
+app.use('/api/profile', profileRoutes);
 
 // ── 404 handler ───────────────────────────────────────────────────────────
 app.use((_req, res) => {
