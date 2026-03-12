@@ -47,22 +47,13 @@ export async function initiateLogin(input: LoginInput) {
     },
   });
 
-  let emailSent = false;
-  let emailError = '';
   try {
     await sendOtpEmail(user.email, code, user.firstName);
-    emailSent = true;
   } catch (emailErr) {
-    emailError = emailErr instanceof Error ? emailErr.message : String(emailErr);
-    console.error('[Auth] Email error:', emailError);
-    console.log(`[Auth] OTP for ${user.email}: ${code}`);
+    console.error('[Auth] Email error:', emailErr instanceof Error ? emailErr.message : emailErr);
   }
 
-  const isDev = env.NODE_ENV !== 'production';
-  return {
-    message: 'If this email is registered, an OTP has been sent.',
-    ...(isDev && { devOtp: code, emailSent, ...(emailError && { emailError }) }),
-  };
+  return { message: 'If this email is registered, an OTP has been sent.' };
 }
 
 // ─── Verify OTP & Issue Tokens ─────────────────────────────────────────────
