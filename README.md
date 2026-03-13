@@ -1,4 +1,4 @@
-# PeopleOS — Backend API
+# Atlas — Backend API
 
 > HR management platform backend built with Express.js, Prisma ORM, and Supabase PostgreSQL.
 
@@ -24,7 +24,7 @@
 
 ## Overview
 
-PeopleOS is a full-featured HR platform for modern teams. The backend is a RESTful API serving all HR workflows:
+Atlas is a full-featured HR platform for modern teams. The backend is a RESTful API serving all HR workflows:
 
 | Module | What it does |
 |---|---|

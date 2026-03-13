@@ -21,14 +21,14 @@ const transporter = nodemailer.createTransport({
 export async function sendWelcomeEmail(to: string, firstName: string, role: string, employeeId: string): Promise<void> {
   const roleLabel = ROLE_LABELS[role] ?? role;
   await transporter.sendMail({
-    from: `PeopleOS <${env.SMTP_USER}>`,
+    from: `Atlas <${env.SMTP_USER}>`,
     to,
-    subject: 'You have been invited to PeopleOS',
+    subject: 'You have been invited to Atlas',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
-        <h2 style="color: #dc2626;">Welcome to PeopleOS</h2>
+        <h2 style="color: #dc2626;">Welcome to Atlas</h2>
         <p>Hi ${firstName},</p>
-        <p>You have been added to the <strong>PeopleOS Employee Portal</strong> with the role of <strong>${roleLabel}</strong>.</p>
+        <p>You have been added to the <strong>Atlas Employee Portal</strong> with the role of <strong>${roleLabel}</strong>.</p>
         <table style="background:#f4f4f4;border-radius:8px;padding:16px;width:100%;margin:20px 0;">
           <tr><td style="color:#555;padding:4px 0;">Employee ID</td><td style="font-weight:bold;">${employeeId}</td></tr>
           <tr><td style="color:#555;padding:4px 0;">Role</td><td style="font-weight:bold;">${roleLabel}</td></tr>
@@ -47,12 +47,12 @@ export async function sendWelcomeEmail(to: string, firstName: string, role: stri
 
 export async function sendOtpEmail(to: string, otp: string, name: string): Promise<void> {
   await transporter.sendMail({
-    from: `PeopleOS <${env.SMTP_USER}>`,
+    from: `Atlas <${env.SMTP_USER}>`,
     to,
-    subject: 'Your Login OTP – PeopleOS',
+    subject: 'Your Login OTP – Atlas',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
-        <h2 style="color: #dc2626;">PeopleOS</h2>
+        <h2 style="color: #dc2626;">Atlas</h2>
         <p>Hi ${name},</p>
         <p>Your sign-in code (expires in <strong>${env.OTP_EXPIRES_MINUTES} minutes</strong>):</p>
         <div style="background:#f4f4f4;border-radius:8px;padding:20px;text-align:center;
