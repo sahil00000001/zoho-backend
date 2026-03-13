@@ -72,9 +72,11 @@ export async function createUser(input: CreateUserInput) {
     select: USER_SELECT,
   });
 
-  sendWelcomeEmail(user.email, user.firstName, user.role, user.employeeId).catch(err =>
-    console.error('[User] Welcome email error:', err instanceof Error ? err.message : err),
-  );
+  try {
+    await sendWelcomeEmail(user.email, user.firstName, user.role, user.employeeId);
+  } catch (err) {
+    console.error('[User] Welcome email error:', err instanceof Error ? err.message : err);
+  }
 
   return user;
 }
