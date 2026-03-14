@@ -5,6 +5,7 @@ import { generateOTP, otpExpiry } from '../utils/otp';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import { env } from '../config/env';
 import { LoginInput, VerifyOtpInput } from '../schemas/auth.schema';
+import { getMyPermissions } from './role.service';
 
 // ─── User selection helper ─────────────────────────────────────────────────
 const userSelect = {
@@ -104,8 +105,10 @@ export async function verifyOtp(input: VerifyOtpInput) {
 
   const { id, employeeId, email, firstName, lastName, role, designation, profilePhotoUrl, department } = user;
 
+  const permissions = await getMyPermissions(id);
+
   return {
-    user: { id, employeeId, email, firstName, lastName, role, designation, profilePhotoUrl, department },
+    user: { id, employeeId, email, firstName, lastName, role, designation, profilePhotoUrl, department, permissions },
     accessToken,
     refreshToken,
   };

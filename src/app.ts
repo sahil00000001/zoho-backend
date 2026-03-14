@@ -5,6 +5,7 @@ import { env } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 import { sendSuccess, sendError } from './utils/response';
 import { prisma } from './lib/prisma';
+import { seedSystemRoles } from './services/role.service';
 
 // Routes
 import authRoutes from './routes/auth.routes';
@@ -19,6 +20,8 @@ import compoffRoutes from './routes/compoff.routes';
 import onboardingRoutes from './routes/onboarding.routes';
 import profileRoutes from './routes/profile.routes';
 import announcementRoutes from './routes/announcement.routes';
+import roleRoutes from './routes/role.routes';
+import auditRoutes from './routes/audit.routes';
 
 const app = express();
 
@@ -51,6 +54,8 @@ app.use('/api/compoffs', compoffRoutes);
 app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/announcements', announcementRoutes);
+app.use('/api/roles', roleRoutes);
+app.use('/api/audit', auditRoutes);
 
 // ── 404 handler ───────────────────────────────────────────────────────────
 app.use((_req, res) => {
@@ -59,5 +64,8 @@ app.use((_req, res) => {
 
 // ── Global error handler ──────────────────────────────────────────────────
 app.use(errorHandler);
+
+// ── Seed system roles on startup ─────────────────────────────────────────
+seedSystemRoles().catch(console.error);
 
 export default app;

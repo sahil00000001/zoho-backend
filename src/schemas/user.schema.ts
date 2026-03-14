@@ -9,6 +9,7 @@ export const createUserSchema = z.object({
   phoneNumber: z.string().optional(),
   departmentId: z.string().uuid().optional().or(z.literal('')).transform(v => v || undefined),
   managerId: z.string().uuid().optional().or(z.literal('')).transform(v => v || undefined),
+  customRoleId: z.string().cuid().optional().or(z.literal('')).transform(v => v || undefined),
   joiningDate: z.string().optional(), // ISO date string
 });
 

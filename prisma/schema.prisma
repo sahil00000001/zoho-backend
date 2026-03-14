@@ -80,12 +80,14 @@ model User {
   isActive        Boolean   @default(true)
   departmentId    String?
   managerId       String?
+  customRoleId    String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
   department    Department?    @relation(fields: [departmentId], references: [id])
   manager       User?          @relation("ManagerSubordinates", fields: [managerId], references: [id])
   subordinates  User[]         @relation("ManagerSubordinates")
+  customRole    CustomRole?    @relation(fields: [customRoleId], references: [id])
   attendances            Attendance[]
   leaves                 Leave[]
   refreshTokens          RefreshToken[]
@@ -405,6 +407,63 @@ model KRADocument {
   mimeType   String?
   uploadedAt DateTime @default(now())
   user       User     @relation(fields: [userId], references: [id])
+}
+
+// ─────────────────────────────────────────
+// RBAC — Custom Roles
+// ─────────────────────────────────────────
+
+model CustomRole {
+  id                  String   @id @default(cuid())
+  name                String   @unique
+  description         String?
+  basePermissionLevel Role     // EMPLOYEE | MANAGER | HR | ADMIN — controls what API calls they can make
+  isSystem            Boolean  @default(false)
+  color               String   @default("#6366f1")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  modulePermissions   RoleModulePermission[]
+  users               User[]
+}
+
+model RoleModulePermission {
+  id           String     @id @default(cuid())
+  customRoleId String
+  moduleKey    String     // 'attendance' | 'leaves' | 'onboarding' | etc.
+  canAccess    Boolean    @default(true)
+  customRole   CustomRole @relation(fields: [customRoleId], references: [id], onDelete: Cascade)
+
+  @@unique([customRoleId, moduleKey])
+}
+
+// ─────────────────────────────────────────
+// Audit & Error Logs
+// ─────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  userEmail  String?
+  userName   String?
+  action     String   // e.g. 'CREATE_USER', 'APPROVE_LEAVE', 'CHECK_IN'
+  module     String   // e.g. 'users', 'leaves', 'attendance'
+  resourceId String?
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+}
+
+model ErrorLog {
+  id         String   @id @default(cuid())
+  message    String
+  stack      String?
+  endpoint   String?
+  method     String?
+  userId     String?
+  statusCode Int?
+  createdAt  DateTime @default(now())
 }
 
 // ─────────────────────────────────────────
