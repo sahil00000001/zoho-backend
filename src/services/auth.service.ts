@@ -105,7 +105,11 @@ export async function verifyOtp(input: VerifyOtpInput) {
 
   const { id, employeeId, email, firstName, lastName, role, designation, profilePhotoUrl, department } = user;
 
-  const permissions = await getMyPermissions(id);
+  // Best-effort — if CustomRole table not yet migrated, return null gracefully
+  let permissions = null;
+  try {
+    permissions = await getMyPermissions(id);
+  } catch { /* DB schema not yet migrated; client will fetch permissions separately */ }
 
   return {
     user: { id, employeeId, email, firstName, lastName, role, designation, profilePhotoUrl, department, permissions },

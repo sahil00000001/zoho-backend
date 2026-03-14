@@ -14,7 +14,10 @@ export async function listUsers(req: AuthRequest, res: Response, next: NextFunct
       search,
     });
     sendSuccess({ res, data: users });
-  } catch (err) { next(err); }
+  } catch (err) {
+    console.error('[listUsers] Error:', err instanceof Error ? err.message : err);
+    next(err);
+  }
 }
 
 export async function getUser(req: AuthRequest, res: Response, next: NextFunction) {
