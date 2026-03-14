@@ -65,7 +65,7 @@ export async function updateRole(id: string, data: {
 }) {
   const role = await prisma.customRole.findUnique({ where: { id } });
   if (!role) throw new AppError('NOT_FOUND', 'Role not found', 404);
-  if (role.isSystem && data.basePermissionLevel) {
+  if (role.isSystem && data.basePermissionLevel && data.basePermissionLevel !== role.basePermissionLevel) {
     throw new AppError('FORBIDDEN', 'Cannot change permission level of system roles', 403);
   }
 
