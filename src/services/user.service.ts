@@ -21,9 +21,11 @@ const USER_SELECT = {
   manager: { select: { id: true, firstName: true, lastName: true, employeeId: true } },
 };
 
+const VALID_ROLES = new Set(['EMPLOYEE', 'MANAGER', 'HR', 'ADMIN']);
+
 export async function getAllUsers(filters?: { role?: string; departmentId?: string; isActive?: boolean; search?: string }) {
   const where: Record<string, unknown> = {};
-  if (filters?.role) where.role = filters.role;
+  if (filters?.role && VALID_ROLES.has(filters.role)) where.role = filters.role;
   if (filters?.departmentId) where.departmentId = filters.departmentId;
   if (filters?.isActive !== undefined) where.isActive = filters.isActive;
   if (filters?.search) {
