@@ -117,9 +117,9 @@ export async function getMyPermissions(userId: string) {
   // Fallback: default module access based on base role
   const defaultModules: Record<string, string[]> = {
     ADMIN: ALL_MODULES.map(m => m.key),
-    HR: ['dashboard', 'attendance', 'leaves', 'announcements', 'directory', 'profile', 'onboarding', 'approvals', 'documents', 'users'],
-    MANAGER: ['dashboard', 'attendance', 'leaves', 'announcements', 'directory', 'profile', 'onboarding', 'approvals', 'documents'],
-    EMPLOYEE: ['dashboard', 'attendance', 'leaves', 'announcements', 'directory', 'profile', 'onboarding', 'documents'],
+    HR: ['dashboard', 'attendance', 'leaves', 'announcements', 'directory', 'org-chart', 'profile', 'onboarding', 'approvals', 'documents', 'users'],
+    MANAGER: ['dashboard', 'attendance', 'leaves', 'announcements', 'directory', 'org-chart', 'profile', 'onboarding', 'approvals', 'documents'],
+    EMPLOYEE: ['dashboard', 'attendance', 'leaves', 'announcements', 'directory', 'org-chart', 'profile', 'onboarding', 'documents'],
   };
 
   return {
@@ -134,19 +134,19 @@ export async function seedSystemRoles() {
 
   const systemRoles = [
     { name: 'Employee', basePermissionLevel: 'EMPLOYEE', color: '#6366f1', isSystem: true,
-      modules: ['dashboard', 'attendance', 'leaves', 'announcements', 'directory', 'profile', 'onboarding', 'documents'] },
+      modules: ['dashboard', 'attendance', 'leaves', 'announcements', 'directory', 'org-chart', 'profile', 'onboarding', 'documents'] },
     { name: 'Manager', basePermissionLevel: 'MANAGER', color: '#0ea5e9', isSystem: true,
-      modules: ['dashboard', 'attendance', 'leaves', 'announcements', 'directory', 'profile', 'onboarding', 'approvals', 'documents'] },
+      modules: ['dashboard', 'attendance', 'leaves', 'announcements', 'directory', 'org-chart', 'profile', 'onboarding', 'approvals', 'documents'] },
     { name: 'HR Manager', basePermissionLevel: 'HR', color: '#10b981', isSystem: true,
-      modules: ['dashboard', 'attendance', 'leaves', 'announcements', 'directory', 'profile', 'onboarding', 'approvals', 'documents', 'users'] },
+      modules: ['dashboard', 'attendance', 'leaves', 'announcements', 'directory', 'org-chart', 'profile', 'onboarding', 'approvals', 'documents', 'users'] },
     { name: 'L&D Manager', basePermissionLevel: 'HR', color: '#f59e0b', isSystem: false,
-      modules: ['dashboard', 'announcements', 'directory', 'profile', 'onboarding', 'documents'] },
+      modules: ['dashboard', 'announcements', 'directory', 'org-chart', 'profile', 'onboarding', 'documents'] },
     { name: 'Recruitment Team', basePermissionLevel: 'HR', color: '#8b5cf6', isSystem: false,
-      modules: ['dashboard', 'announcements', 'directory', 'profile', 'documents', 'users'] },
+      modules: ['dashboard', 'announcements', 'directory', 'org-chart', 'profile', 'documents', 'users'] },
     { name: 'Payroll HR', basePermissionLevel: 'HR', color: '#ef4444', isSystem: false,
-      modules: ['dashboard', 'attendance', 'leaves', 'directory', 'profile', 'documents'] },
+      modules: ['dashboard', 'attendance', 'leaves', 'directory', 'org-chart', 'profile', 'documents'] },
     { name: 'Admin', basePermissionLevel: 'ADMIN', color: '#dc2626', isSystem: true,
-      modules: ['dashboard', 'attendance', 'leaves', 'announcements', 'directory', 'profile', 'onboarding', 'approvals', 'documents', 'users', 'roles', 'audit'] },
+      modules: ['dashboard', 'attendance', 'leaves', 'announcements', 'directory', 'org-chart', 'profile', 'onboarding', 'approvals', 'documents', 'users', 'roles', 'audit'] },
   ];
 
   for (const r of systemRoles) {
@@ -161,4 +161,18 @@ export async function seedSystemRoles() {
     });
   }
   console.log('[Seed] System roles created');
+}
+
+// Adds missing module keys to ALL existing roles — safe to run on every startup
+export async function patchMissingModules(moduleKey: string) {
+  const roles = await prisma.customRole.findMany({ include: { modulePermissions: true } });
+  for (const role of roles) {
+    const has = role.modulePermissions.some(p => p.moduleKey === moduleKey);
+    if (!has) {
+      await prisma.roleModulePermission.create({
+        data: { customRoleId: role.id, moduleKey, canAccess: true },
+      });
+      console.log(`[Patch] Added '${moduleKey}' to role: ${role.name}`);
+    }
+  }
 }

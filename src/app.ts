@@ -5,7 +5,7 @@ import { env } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 import { sendSuccess, sendError } from './utils/response';
 import { prisma } from './lib/prisma';
-import { seedSystemRoles } from './services/role.service';
+import { seedSystemRoles, patchMissingModules } from './services/role.service';
 
 // Routes
 import authRoutes from './routes/auth.routes';
@@ -69,5 +69,6 @@ app.use(errorHandler);
 
 // ── Seed system roles on startup ─────────────────────────────────────────
 seedSystemRoles().catch(console.error);
+patchMissingModules('org-chart').catch(console.error);
 
 export default app;
