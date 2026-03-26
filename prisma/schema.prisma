@@ -107,6 +107,12 @@ model User {
   certifications   Certification[]
   kraDocuments     KRADocument[]
   announcements    Announcement[]   @relation("AnnouncementAuthor")
+
+  @@index([managerId])
+  @@index([isActive])
+  @@index([departmentId])
+  @@index([isActive, role])
+  @@index([isActive, managerId])
 }
 
 model OTP {
@@ -214,6 +220,9 @@ model Leave {
 
   @@index([userId])
   @@index([status])
+  @@index([leaveTypeId])
+  @@index([userId, status])
+  @@index([status, startDate, endDate])
 }
 
 model Holiday {
@@ -453,6 +462,11 @@ model AuditLog {
   ipAddress  String?
   userAgent  String?
   createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([module])
+  @@index([createdAt])
 }
 
 model ErrorLog {
@@ -494,4 +508,8 @@ model Announcement {
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
   createdBy    User                 @relation("AnnouncementAuthor", fields: [createdById], references: [id])
+
+  @@index([createdAt])
+  @@index([isPinned, createdAt])
+  @@index([type, departmentId])
 }

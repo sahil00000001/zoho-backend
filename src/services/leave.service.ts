@@ -64,15 +64,9 @@ export async function getAllLeaves(filters?: { status?: string; userId?: string 
 
 // ─── Get Team Leaves (Manager sees their subordinates' leaves) ─────────────
 export async function getTeamLeaves(managerId: string, filters?: { status?: string }) {
-  const subordinates = await prisma.user.findMany({
-    where: { managerId },
-    select: { id: true },
-  });
-  const userIds = subordinates.map((u) => u.id);
-
   return prisma.leave.findMany({
     where: {
-      userId: { in: userIds },
+      user: { managerId, isActive: true },
       ...(filters?.status ? { status: filters.status as 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' } : {}),
     },
     orderBy: { createdAt: 'desc' },
@@ -151,27 +145,32 @@ export async function getLeaveCalendar(month: string) {
 
 // ─── Leave Balance Summary ─────────────────────────────────────────────────
 export async function getLeaveBalance(userId: string) {
-  const leaveTypes = await prisma.leaveType.findMany({ where: { isActive: true } });
   const currentYear = new Date().getFullYear();
   const yearStart = new Date(`${currentYear}-01-01`);
 
-  const balances = await Promise.all(
-    leaveTypes.map(async (lt) => {
-      const approvedLeaves = await prisma.leave.findMany({
-        where: { userId, leaveTypeId: lt.id, status: 'APPROVED', startDate: { gte: yearStart } },
-        select: { startDate: true, endDate: true },
-      });
-      const usedDays = approvedLeaves.reduce((sum, l) => {
-        const days = Math.ceil((new Date(l.endDate).getTime() - new Date(l.startDate).getTime()) / 86_400_000) + 1;
-        return sum + days;
-      }, 0);
-      return {
-        leaveType: lt,
-        maxDays: lt.maxDays,
-        usedDays,
-        remainingDays: Math.max(0, lt.maxDays - usedDays),
-      };
-    })
-  );
-  return balances;
+  // Single parallel fetch instead of N+1 per leave type
+  const [leaveTypes, approvedLeaves] = await Promise.all([
+    prisma.leaveType.findMany({ where: { isActive: true } }),
+    prisma.leave.findMany({
+      where: { userId, status: 'APPROVED', startDate: { gte: yearStart } },
+      select: { leaveTypeId: true, startDate: true, endDate: true },
+    }),
+  ]);
+
+  // Group used days by leave type in memory
+  const usedByType = new Map<string, number>();
+  for (const l of approvedLeaves) {
+    const days = Math.ceil((new Date(l.endDate).getTime() - new Date(l.startDate).getTime()) / 86_400_000) + 1;
+    usedByType.set(l.leaveTypeId, (usedByType.get(l.leaveTypeId) ?? 0) + days);
+  }
+
+  return leaveTypes.map((lt) => {
+    const usedDays = usedByType.get(lt.id) ?? 0;
+    return {
+      leaveType: lt,
+      maxDays: lt.maxDays,
+      usedDays,
+      remainingDays: Math.max(0, lt.maxDays - usedDays),
+    };
+  });
 }
