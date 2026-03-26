@@ -16,7 +16,6 @@ export async function assignManager(req: AuthRequest, res: Response, next: NextF
     const result = await orgChartService.assignManager(userId, managerId ?? null);
     logAudit({
       userId: req.user!.userId,
-      userName: `${req.user!.firstName} ${req.user!.lastName}`,
       action: 'ASSIGN_MANAGER',
       module: 'org-chart',
       resourceId: userId,
