@@ -59,3 +59,12 @@ export async function getTeamAttendance(req: AuthRequest, res: Response, next: N
     sendSuccess({ res, data: records });
   } catch (err) { next(err); }
 }
+
+// All authenticated users: full employee roster with attendance for a date
+export async function getTeamDaily(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const { date } = req.query as { date?: string };
+    const records = await attendanceService.getTeamDailyAttendance(date);
+    sendSuccess({ res, data: records });
+  } catch (err) { next(err); }
+}

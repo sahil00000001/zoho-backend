@@ -125,3 +125,31 @@ export async function getMyHistory(userId: string, limit = 30) {
     include: ATTENDANCE_INCLUDE,
   });
 }
+
+// ─── All Employees Daily Attendance (any authenticated user) ────────────────
+export async function getTeamDailyAttendance(date?: string) {
+  const targetDate = date ? new Date(date) : new Date();
+  targetDate.setUTCHours(0, 0, 0, 0);
+
+  const [users, attendances] = await Promise.all([
+    prisma.user.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        employeeId: true,
+        designation: true,
+        department: { select: { name: true } },
+      },
+      orderBy: [{ firstName: 'asc' }],
+    }),
+    prisma.attendance.findMany({
+      where: { date: targetDate },
+      orderBy: { checkInTime: 'asc' },
+    }),
+  ]);
+
+  const attendanceMap = new Map(attendances.map(a => [a.userId, a]));
+  return users.map(u => ({ user: u, attendance: attendanceMap.get(u.id) ?? null }));
+}

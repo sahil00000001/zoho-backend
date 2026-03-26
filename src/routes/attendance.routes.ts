@@ -13,6 +13,7 @@ router.post('/check-out', attendanceController.checkOut);
 router.get('/today', attendanceController.getTodayStatus);
 router.get('/history', attendanceController.getMyHistory);
 router.get('/monthly', attendanceController.getMonthlyAttendance);
+router.get('/daily', attendanceController.getTeamDaily);
 
 // Manager/Admin routes
 router.get('/team', authorize(Role.MANAGER, Role.HR, Role.ADMIN), attendanceController.getTeamAttendance);
