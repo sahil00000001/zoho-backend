@@ -9,6 +9,9 @@ const router = Router();
 
 router.use(authenticate);
 
+// All authenticated users: leave calendar
+router.get('/calendar', leaveController.getLeaveCalendar);
+
 // Employee routes
 router.get('/my', leaveController.getMyLeaves);
 router.post('/', validate(applyLeaveSchema), leaveController.applyLeave);

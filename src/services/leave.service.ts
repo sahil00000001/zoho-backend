@@ -120,6 +120,35 @@ export async function cancelLeave(leaveId: string, userId: string) {
   });
 }
 
+// ─── Leave Calendar (all employees, any role) ──────────────────────────────
+export async function getLeaveCalendar(month: string) {
+  const [year, m] = month.split('-').map(Number);
+  const startOfMonth = new Date(year, m - 1, 1);
+  const endOfMonth = new Date(year, m, 0); // last day of month
+
+  return prisma.leave.findMany({
+    where: {
+      status: { in: ['APPROVED', 'PENDING'] },
+      startDate: { lte: endOfMonth },
+      endDate: { gte: startOfMonth },
+    },
+    orderBy: [{ startDate: 'asc' }],
+    include: {
+      leaveType: { select: { id: true, name: true } },
+      user: {
+        select: {
+          id: true,
+          employeeId: true,
+          firstName: true,
+          lastName: true,
+          designation: true,
+          department: { select: { name: true } },
+        },
+      },
+    },
+  });
+}
+
 // ─── Leave Balance Summary ─────────────────────────────────────────────────
 export async function getLeaveBalance(userId: string) {
   const leaveTypes = await prisma.leaveType.findMany({ where: { isActive: true } });

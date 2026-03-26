@@ -26,6 +26,15 @@ export async function getLeaveTypes(_req: AuthRequest, res: Response, next: Next
   } catch (err) { next(err); }
 }
 
+// Any authenticated user: leave calendar for a given month
+export async function getLeaveCalendar(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const month = (req.query.month as string) || new Date().toISOString().slice(0, 7);
+    const data = await leaveService.getLeaveCalendar(month);
+    sendSuccess({ res, data });
+  } catch (err) { next(err); }
+}
+
 // Manager/Admin: view all or team leaves
 export async function getAllLeaves(req: AuthRequest, res: Response, next: NextFunction) {
   try {
