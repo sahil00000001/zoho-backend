@@ -10,6 +10,7 @@ router.use(authenticate);
 // Employee routes
 router.post('/check-in', attendanceController.checkIn);
 router.post('/check-out', attendanceController.checkOut);
+router.post('/re-check-in', attendanceController.reCheckIn);
 router.get('/today', attendanceController.getTodayStatus);
 router.get('/history', attendanceController.getMyHistory);
 router.get('/monthly', attendanceController.getMonthlyAttendance);

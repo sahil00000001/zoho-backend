@@ -60,6 +60,21 @@ export async function checkOut(userId: string, location?: Location) {
   });
 }
 
+// ─── Re-Check-In (undo accidental checkout, keep original check-in time) ───
+export async function reCheckIn(userId: string) {
+  const date = todayDate();
+
+  const existing = await prisma.attendance.findUnique({ where: { userId_date: { userId, date } } });
+  if (!existing) throw new AppError('NOT_CHECKED_IN', 'No attendance record found for today', 400);
+  if (!existing.checkOutTime) throw new AppError('NOT_CHECKED_OUT', 'You have not checked out yet', 400);
+
+  return prisma.attendance.update({
+    where: { id: existing.id },
+    data: { checkOutTime: null, workHours: null, overtimeHours: null },
+    include: ATTENDANCE_INCLUDE,
+  });
+}
+
 // ─── Today's Status ────────────────────────────────────────────────────────
 export async function getTodayStatus(userId: string) {
   const date = todayDate();

@@ -22,6 +22,13 @@ export async function checkOut(req: AuthRequest, res: Response, next: NextFuncti
   } catch (err) { next(err); }
 }
 
+export async function reCheckIn(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const record = await attendanceService.reCheckIn(req.user!.userId);
+    sendSuccess({ res, data: record, message: 'Session reopened. Check out when ready.' });
+  } catch (err) { next(err); }
+}
+
 export async function getTodayStatus(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const record = await attendanceService.getTodayStatus(req.user!.userId);
