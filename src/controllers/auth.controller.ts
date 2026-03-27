@@ -51,3 +51,13 @@ export async function logout(req: Request, res: Response, next: NextFunction) {
     next(err);
   }
 }
+
+// DEV ONLY — remove before go-live
+export async function devLogin(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await authService.devLogin();
+    sendSuccess({ res, data: result, message: 'Dev login successful' });
+  } catch (err) {
+    next(err);
+  }
+}

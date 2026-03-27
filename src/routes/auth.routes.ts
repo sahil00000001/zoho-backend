@@ -16,5 +16,7 @@ router.post('/verify-otp', validate(verifyOtpSchema), authController.verifyOtp);
 router.get('/me', authenticate, authController.getProfile);
 router.post('/refresh', validate(refreshTokenSchema), authController.refreshTokens);
 router.post('/logout', validate(logoutSchema), authController.logout);
+// DEV ONLY — remove before go-live
+router.post('/dev-login', authController.devLogin);
 
 export default router;

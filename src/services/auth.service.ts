@@ -171,6 +171,33 @@ export async function refreshTokens(token: string) {
   return { accessToken: newAccessToken, refreshToken: newRefreshToken };
 }
 
+// ─── Dev Login (DEV ONLY — remove before go-live) ──────────────────────────
+export async function devLogin() {
+  if (process.env.NODE_ENV === 'production') {
+    throw new AppError('FORBIDDEN', 'Not available in production', 403);
+  }
+
+  const user = await prisma.user.findFirst({
+    where: { isActive: true, role: 'ADMIN' },
+    select: userSelect,
+  });
+
+  if (!user) {
+    throw new AppError('NOT_FOUND', 'No active admin user found', 404);
+  }
+
+  const accessToken = signAccessToken({ userId: user.id, role: user.role });
+  const refreshToken = signRefreshToken({ userId: user.id });
+
+  const refreshExpiry = new Date();
+  refreshExpiry.setDate(refreshExpiry.getDate() + 7);
+  await prisma.refreshToken.create({
+    data: { userId: user.id, token: refreshToken, expiresAt: refreshExpiry },
+  });
+
+  return { accessToken, refreshToken, user };
+}
+
 // ─── Logout ────────────────────────────────────────────────────────────────
 export async function logout(token: string) {
   await prisma.refreshToken.deleteMany({ where: { token } });
