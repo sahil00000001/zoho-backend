@@ -54,7 +54,7 @@ export async function getAllLeaves(req: AuthRequest, res: Response, next: NextFu
 // Manager/Admin: approve a leave
 export async function approveLeave(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const leave = await leaveService.approveLeave(req.params.id);
+    const leave = await leaveService.approveLeave(req.params.id, req.user!.userId);
     sendSuccess({ res, data: leave, message: 'Leave approved successfully' });
   } catch (err) { next(err); }
 }

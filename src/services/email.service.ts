@@ -45,6 +45,145 @@ export async function sendWelcomeEmail(to: string, firstName: string, role: stri
   });
 }
 
+// ─── Leave Request → Manager ────────────────────────────────────────────────
+export async function sendLeaveRequestEmail(opts: {
+  to: string;
+  managerName: string;
+  employeeName: string;
+  employeeId: string;
+  department: string;
+  leaveType: string;
+  days: number;
+  startDate: string;
+  endDate: string;
+  reason: string;
+}): Promise<void> {
+  const { to, managerName, employeeName, employeeId, department, leaveType, days, startDate, endDate, reason } = opts;
+  const subject = `Leave Request: ${employeeName} | ${days} Day${days > 1 ? 's' : ''} ${leaveType}`;
+  await transporter.sendMail({
+    from: `ATLAS HR <${env.SMTP_USER}>`,
+    to,
+    subject,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1e293b;">
+        <div style="background:linear-gradient(135deg,#dc2626,#f97316);padding:24px 32px;border-radius:12px 12px 0 0;">
+          <h2 style="color:#fff;margin:0;font-size:20px;font-weight:800;letter-spacing:-0.3px;">ATLAS HR</h2>
+          <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px;">Leave Approval Request</p>
+        </div>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;padding:28px 32px;">
+          <p style="margin:0 0 6px;font-size:15px;">Dear <strong>${managerName}</strong>,</p>
+          <p style="color:#475569;font-size:14px;margin:0 0 24px;line-height:1.6;">
+            A leave request has been submitted by one of your team members and requires your approval.
+          </p>
+
+          <table style="width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;margin-bottom:24px;">
+            <tr style="background:#f8fafc;">
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;width:140px;">Employee</td>
+              <td style="padding:11px 16px;font-size:14px;font-weight:600;color:#0f172a;">${employeeName}</td>
+            </tr>
+            <tr style="background:#fff;">
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Employee ID</td>
+              <td style="padding:11px 16px;font-size:14px;color:#334155;">${employeeId}</td>
+            </tr>
+            <tr style="background:#f8fafc;">
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Department</td>
+              <td style="padding:11px 16px;font-size:14px;color:#334155;">${department}</td>
+            </tr>
+            <tr style="background:#fff;">
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Leave Type</td>
+              <td style="padding:11px 16px;font-size:14px;font-weight:600;color:#dc2626;">${leaveType}</td>
+            </tr>
+            <tr style="background:#f8fafc;">
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Duration</td>
+              <td style="padding:11px 16px;font-size:14px;color:#334155;">${startDate} → ${endDate} &nbsp;·&nbsp; <strong>${days} day${days > 1 ? 's' : ''}</strong></td>
+            </tr>
+            <tr style="background:#fff;">
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Reason</td>
+              <td style="padding:11px 16px;font-size:14px;color:#334155;">${reason || '—'}</td>
+            </tr>
+          </table>
+
+          <p style="font-size:13px;color:#64748b;margin:0;">
+            Please log in to <a href="https://zoho-app-sigma.vercel.app/dashboard/approvals" style="color:#dc2626;font-weight:600;text-decoration:none;">ATLAS HR Portal</a> to approve or reject this request.
+          </p>
+        </div>
+        <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:16px;">ATLAS HR · This is an automated notification</p>
+      </div>
+    `,
+  });
+}
+
+// ─── Leave Approved → Super Admin / HR ──────────────────────────────────────
+export async function sendLeaveApprovedEmail(opts: {
+  to: string;
+  adminName: string;
+  employeeName: string;
+  employeeId: string;
+  department: string;
+  leaveType: string;
+  days: number;
+  startDate: string;
+  endDate: string;
+  approvedBy: string;
+}): Promise<void> {
+  const { to, adminName, employeeName, employeeId, department, leaveType, days, startDate, endDate, approvedBy } = opts;
+  const subject = `Leave Approved: ${employeeName} | ${days} Day${days > 1 ? 's' : ''} ${leaveType}`;
+  await transporter.sendMail({
+    from: `ATLAS HR <${env.SMTP_USER}>`,
+    to,
+    subject,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1e293b;">
+        <div style="background:linear-gradient(135deg,#dc2626,#f97316);padding:24px 32px;border-radius:12px 12px 0 0;">
+          <h2 style="color:#fff;margin:0;font-size:20px;font-weight:800;letter-spacing:-0.3px;">ATLAS HR</h2>
+          <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px;">Leave Approval Notification</p>
+        </div>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;padding:28px 32px;">
+          <div style="display:inline-flex;align-items:center;gap:8px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 14px;margin-bottom:20px;">
+            <span style="color:#16a34a;font-weight:700;font-size:13px;">✓ Leave Approved</span>
+          </div>
+          <p style="margin:0 0 6px;font-size:15px;">Dear <strong>${adminName}</strong>,</p>
+          <p style="color:#475569;font-size:14px;margin:0 0 24px;line-height:1.6;">
+            The following leave request has been approved by <strong>${approvedBy}</strong> and is now active.
+          </p>
+
+          <table style="width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;margin-bottom:24px;">
+            <tr style="background:#f8fafc;">
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;width:140px;">Employee</td>
+              <td style="padding:11px 16px;font-size:14px;font-weight:600;color:#0f172a;">${employeeName}</td>
+            </tr>
+            <tr style="background:#fff;">
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Employee ID</td>
+              <td style="padding:11px 16px;font-size:14px;color:#334155;">${employeeId}</td>
+            </tr>
+            <tr style="background:#f8fafc;">
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Department</td>
+              <td style="padding:11px 16px;font-size:14px;color:#334155;">${department}</td>
+            </tr>
+            <tr style="background:#fff;">
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Leave Type</td>
+              <td style="padding:11px 16px;font-size:14px;font-weight:600;color:#dc2626;">${leaveType}</td>
+            </tr>
+            <tr style="background:#f8fafc;">
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Duration</td>
+              <td style="padding:11px 16px;font-size:14px;color:#334155;">${startDate} → ${endDate} &nbsp;·&nbsp; <strong>${days} day${days > 1 ? 's' : ''}</strong></td>
+            </tr>
+            <tr style="background:#fff;">
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Approved By</td>
+              <td style="padding:11px 16px;font-size:14px;color:#334155;">${approvedBy}</td>
+            </tr>
+          </table>
+
+          <p style="font-size:13px;color:#64748b;margin:0;">
+            View details in the <a href="https://zoho-app-sigma.vercel.app/dashboard/approvals" style="color:#dc2626;font-weight:600;text-decoration:none;">ATLAS HR Portal</a>.
+          </p>
+        </div>
+        <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:16px;">ATLAS HR · This is an automated notification</p>
+      </div>
+    `,
+  });
+}
+
 export async function sendOtpEmail(to: string, otp: string, name: string): Promise<void> {
   await transporter.sendMail({
     from: `Atlas <${env.SMTP_USER}>`,
