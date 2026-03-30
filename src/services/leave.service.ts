@@ -1,7 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { ApplyLeaveInput } from '../schemas/leave.schema';
-import { sendLeaveRequestEmail, sendLeaveApprovedEmail } from './email.service';
+import { sendLeaveRequestEmail, sendLeaveApprovedEmail, sendLeaveStatusEmail } from './email.service';
 
 const LEAVE_INCLUDE = {
   leaveType: { select: { id: true, name: true, maxDays: true } },
@@ -160,7 +160,10 @@ export async function approveLeave(leaveId: string, approverId?: string) {
 
   const emp = updated.user as { firstName: string; lastName: string; employeeId: string; email: string; department?: { name: string } | null };
   const days = calcDays(new Date(updated.startDate), new Date(updated.endDate));
+  const startDateFmt = fmtDate(new Date(updated.startDate));
+  const endDateFmt = fmtDate(new Date(updated.endDate));
 
+  // Notify all active ADMIN + HR users
   for (const admin of admins) {
     sendLeaveApprovedEmail({
       to: admin.email,
@@ -170,26 +173,64 @@ export async function approveLeave(leaveId: string, approverId?: string) {
       department: emp.department?.name ?? '—',
       leaveType: updated.leaveType.name,
       days,
-      startDate: fmtDate(new Date(updated.startDate)),
-      endDate: fmtDate(new Date(updated.endDate)),
+      startDate: startDateFmt,
+      endDate: endDateFmt,
       approvedBy: approverName,
     }).catch(() => {});
   }
+
+  // Notify the employee their leave was approved
+  sendLeaveStatusEmail({
+    to: emp.email,
+    employeeName: `${emp.firstName} ${emp.lastName}`,
+    leaveType: updated.leaveType.name,
+    days,
+    startDate: startDateFmt,
+    endDate: endDateFmt,
+    status: 'APPROVED',
+    approvedBy: approverName,
+  }).catch(() => {});
 
   return updated;
 }
 
 // ─── Reject Leave ──────────────────────────────────────────────────────────
-export async function rejectLeave(leaveId: string, reason?: string) {
+export async function rejectLeave(leaveId: string, rejecterId?: string, reason?: string) {
   const leave = await prisma.leave.findUnique({ where: { id: leaveId } });
   if (!leave) throw new AppError('LEAVE_NOT_FOUND', 'Leave request not found', 404);
   if (leave.status !== 'PENDING') throw new AppError('LEAVE_NOT_PENDING', 'Only pending leaves can be rejected', 400);
 
-  return prisma.leave.update({
+  const updated = await prisma.leave.update({
     where: { id: leaveId },
     data: { status: 'REJECTED', ...(reason ? { reason } : {}) },
     include: LEAVE_INCLUDE,
   });
+
+  let rejecterName = 'Manager';
+  if (rejecterId) {
+    const rejecter = await prisma.user.findUnique({
+      where: { id: rejecterId },
+      select: { firstName: true, lastName: true },
+    });
+    if (rejecter) rejecterName = `${rejecter.firstName} ${rejecter.lastName}`;
+  }
+
+  const emp = updated.user as { firstName: string; lastName: string; email: string };
+  const days = calcDays(new Date(updated.startDate), new Date(updated.endDate));
+
+  sendLeaveStatusEmail({
+    to: emp.email,
+    employeeName: `${emp.firstName} ${emp.lastName}`,
+    leaveType: updated.leaveType.name,
+    days,
+    startDate: fmtDate(new Date(updated.startDate)),
+    endDate: fmtDate(new Date(updated.endDate)),
+    status: 'REJECTED',
+    approvedBy: rejecterName,
+    note: reason,
+  }).catch(() => {});
+
+  return updated;
 }
 
 // ─── Cancel Leave (own) ────────────────────────────────────────────────────

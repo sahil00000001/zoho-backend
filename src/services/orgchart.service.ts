@@ -42,11 +42,54 @@ export async function assignManager(userId: string, managerId: string | null) {
     }
   }
 
-  return prisma.user.update({
+  // Fetch previous manager so we can potentially demote them
+  const target = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { managerId: true },
+  });
+  const previousManagerId = target?.managerId ?? null;
+
+  const updated = await prisma.user.update({
     where: { id: userId },
     data: { managerId: managerId ?? null },
     select: { id: true, managerId: true, firstName: true, lastName: true },
   });
+
+  // ── Auto-promote: if this person now has a manager assigned, promote the MANAGER
+  if (managerId) {
+    const mgr = await prisma.user.findUnique({
+      where: { id: managerId },
+      select: { role: true },
+    });
+    // Promote EMPLOYEE → MANAGER automatically
+    if (mgr?.role === 'EMPLOYEE') {
+      await prisma.user.update({
+        where: { id: managerId },
+        data: { role: 'MANAGER' },
+      });
+    }
+  }
+
+  // ── Auto-demote: if the previous manager lost their last subordinate, demote to EMPLOYEE
+  if (previousManagerId && previousManagerId !== managerId) {
+    const prevMgr = await prisma.user.findUnique({
+      where: { id: previousManagerId },
+      select: { role: true },
+    });
+    if (prevMgr?.role === 'MANAGER') {
+      const remainingSubordinates = await prisma.user.count({
+        where: { managerId: previousManagerId, isActive: true },
+      });
+      if (remainingSubordinates === 0) {
+        await prisma.user.update({
+          where: { id: previousManagerId },
+          data: { role: 'EMPLOYEE' },
+        });
+      }
+    }
+  }
+
+  return updated;
 }
 
 export async function bulkAssignManagers(

@@ -63,7 +63,7 @@ export async function approveLeave(req: AuthRequest, res: Response, next: NextFu
 export async function rejectLeave(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const { reason } = req.body as { reason?: string };
-    const leave = await leaveService.rejectLeave(req.params.id, reason);
+    const leave = await leaveService.rejectLeave(req.params.id, req.user!.userId, reason);
     sendSuccess({ res, data: leave, message: 'Leave rejected' });
   } catch (err) { next(err); }
 }
