@@ -122,14 +122,22 @@ export async function verifyOtp(input: VerifyOtpInput) {
 export async function getProfile(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: userSelect,
+    select: { ...userSelect, _count: { select: { subordinates: true } } },
   });
 
   if (!user || !user.isActive) {
     throw new AppError('NOT_FOUND', 'User not found', 404);
   }
 
-  return user;
+  // Auto-correct: if this user has subordinates but role is still EMPLOYEE, promote now
+  let role = user.role;
+  if (role === 'EMPLOYEE' && user._count.subordinates > 0) {
+    await prisma.user.update({ where: { id: userId }, data: { role: 'MANAGER' } });
+    role = 'MANAGER';
+  }
+
+  const { _count, ...rest } = user;
+  return { ...rest, role };
 }
 
 // ─── Refresh Tokens ────────────────────────────────────────────────────────
