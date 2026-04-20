@@ -401,6 +401,8 @@ model Certification {
   issueDate    DateTime?
   expiryDate   DateTime?
   credentialId String?
+  fileUrl      String?   @db.Text
+  fileName     String?
   createdAt    DateTime  @default(now())
   user         User      @relation(fields: [userId], references: [id])
 }

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate, authorize } from '../middleware/auth';
 import * as ctrl from '../controllers/profile.controller';
+import upload from '../middleware/upload.middleware';
 import { Role } from '@prisma/client';
 
 const router = Router();
@@ -21,8 +22,11 @@ router.delete('/me/certifications/:id', ctrl.deleteCertification);
 
 // KRA
 router.get('/me/kra', ctrl.getMyKRA);
-router.post('/me/kra', ctrl.uploadKRA);
+router.post('/me/kra', upload.single('file'), ctrl.uploadKRA);
 router.delete('/me/kra/:id', ctrl.deleteKRA);
+
+// Certification file upload
+router.post('/me/certifications/upload', upload.single('file'), ctrl.uploadCertificationFile);
 
 // HR/Admin: view any profile and all KRAs
 router.get('/kra/all', authorize(Role.HR, Role.ADMIN, Role.MANAGER), ctrl.getAllKRA);

@@ -1,7 +1,8 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import * as svc from '../services/profile.service';
-import { sendSuccess } from '../utils/response';
+import { uploadFile } from '../services/storage.service';
+import { sendSuccess, sendError } from '../utils/response';
 
 export async function getMyProfile(req: AuthRequest, res: Response, next: NextFunction) {
   try {
@@ -62,8 +63,30 @@ export async function deleteCertification(req: AuthRequest, res: Response, next:
 
 export async function uploadKRA(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const data = await svc.addKRADocument(req.user!.userId, req.body);
+    if (!req.file) {
+      return sendError({ res, code: 'NO_FILE', message: 'No file provided', statusCode: 400 });
+    }
+    const { title, period } = req.body;
+    const uploaded = await uploadFile(req.file.buffer, req.file.originalname, req.file.mimetype, 'kra');
+    const data = await svc.addKRADocument(req.user!.userId, {
+      title: title || req.file.originalname,
+      period,
+      fileUrl: uploaded.url,
+      fileName: uploaded.fileName,
+      fileSize: uploaded.size,
+      mimeType: uploaded.mimeType,
+    });
     sendSuccess({ res, data, statusCode: 201 });
+  } catch (e) { next(e); }
+}
+
+export async function uploadCertificationFile(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    if (!req.file) {
+      return sendError({ res, code: 'NO_FILE', message: 'No file provided', statusCode: 400 });
+    }
+    const uploaded = await uploadFile(req.file.buffer, req.file.originalname, req.file.mimetype, 'documents');
+    sendSuccess({ res, data: uploaded, statusCode: 200 });
   } catch (e) { next(e); }
 }
 
@@ -83,7 +106,7 @@ export async function getMyKRA(req: AuthRequest, res: Response, next: NextFuncti
 
 export async function getAllKRA(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const data = await svc.getAllKRADocuments();
+    const data = await svc.getAllKRADocuments(req.user!.userId, req.user!.role);
     sendSuccess({ res, data });
   } catch (e) { next(e); }
 }

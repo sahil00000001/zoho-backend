@@ -63,7 +63,7 @@ export async function deleteSkill(id: string, userId: string) {
 
 export async function addCertification(userId: string, data: {
   name: string; issuer?: string; issueDate?: string;
-  expiryDate?: string; credentialId?: string;
+  expiryDate?: string; credentialId?: string; fileUrl?: string; fileName?: string;
 }) {
   return prisma.certification.create({
     data: {
@@ -71,6 +71,8 @@ export async function addCertification(userId: string, data: {
       name: data.name,
       issuer: data.issuer,
       credentialId: data.credentialId,
+      fileUrl: data.fileUrl,
+      fileName: data.fileName,
       issueDate: data.issueDate ? new Date(data.issueDate) : undefined,
       expiryDate: data.expiryDate ? new Date(data.expiryDate) : undefined,
     },
@@ -99,9 +101,11 @@ export async function getKRADocuments(userId: string) {
   return prisma.kRADocument.findMany({ where: { userId }, orderBy: { uploadedAt: 'desc' } });
 }
 
-// HR/Admin: get all employees' KRA documents
-export async function getAllKRADocuments() {
+// Role-based: Manager sees only subordinates, HR/Admin see all
+export async function getAllKRADocuments(requesterId: string, role: string) {
+  const where = role === 'MANAGER' ? { user: { managerId: requesterId } } : {};
   return prisma.kRADocument.findMany({
+    where,
     include: {
       user: { select: { id: true, firstName: true, lastName: true, employeeId: true, designation: true } },
     },
