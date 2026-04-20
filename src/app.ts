@@ -23,6 +23,7 @@ import announcementRoutes from './routes/announcement.routes';
 import roleRoutes from './routes/role.routes';
 import auditRoutes from './routes/audit.routes';
 import orgChartRoutes from './routes/orgchart.routes';
+import uploadRoutes from './routes/upload.routes';
 
 const app = express();
 
@@ -75,6 +76,7 @@ app.use('/api/announcements', announcementRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/org-chart', orgChartRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // ── 404 handler ───────────────────────────────────────────────────────────
 app.use((_req, res) => {

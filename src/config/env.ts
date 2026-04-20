@@ -24,4 +24,12 @@ export const env = {
   // Gmail SMTP
   SMTP_USER: required('SMTP_USER'),
   SMTP_PASS: required('SMTP_PASS'),
+
+  // Supabase S3 Storage
+  SUPABASE_S3_ENDPOINT:         process.env.SUPABASE_S3_ENDPOINT         ?? '',
+  SUPABASE_S3_REGION:           process.env.SUPABASE_S3_REGION            ?? 'ap-south-1',
+  SUPABASE_S3_ACCESS_KEY_ID:    process.env.SUPABASE_S3_ACCESS_KEY_ID     ?? '',
+  SUPABASE_S3_SECRET_ACCESS_KEY:process.env.SUPABASE_S3_SECRET_ACCESS_KEY ?? '',
+  SUPABASE_STORAGE_BUCKET:      process.env.SUPABASE_STORAGE_BUCKET       ?? 'atlas-files',
+  SUPABASE_PUBLIC_URL:          process.env.SUPABASE_PUBLIC_URL           ?? '',
 } as const;
