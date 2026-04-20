@@ -64,39 +64,20 @@ export async function applyLeave(userId: string, input: ApplyLeaveInput) {
     },
   });
 
-  if (applicant) {
-    let recipientEmail: string | null = applicant.manager?.email ?? null;
-    let recipientName: string = applicant.manager
-      ? `${applicant.manager.firstName} ${applicant.manager.lastName}`
-      : '';
-
-    // No manager assigned — fall back to first active HR or ADMIN
-    if (!recipientEmail) {
-      const fallback = await prisma.user.findFirst({
-        where: { isActive: true, role: { in: ['HR', 'ADMIN'] } },
-        orderBy: { role: 'asc' }, // HR before ADMIN alphabetically
-        select: { firstName: true, lastName: true, email: true },
-      });
-      if (fallback) {
-        recipientEmail = fallback.email;
-        recipientName = `${fallback.firstName} ${fallback.lastName}`;
-      }
-    }
-
-    if (recipientEmail) {
-      sendLeaveRequestEmail({
-        to: recipientEmail,
-        managerName: recipientName,
-        employeeName: `${applicant.firstName} ${applicant.lastName}`,
-        employeeId: applicant.employeeId,
-        department: applicant.department?.name ?? '—',
-        leaveType: leaveType.name,
-        days: calcDays(startDate, endDate),
-        startDate: fmtDate(startDate),
-        endDate: fmtDate(endDate),
-        reason: input.reason ?? '',
-      }).catch(() => {}); // fire-and-forget — don't fail the request if email fails
-    }
+  // Send email only to the assigned manager — no fallback to admin/HR
+  if (applicant?.manager?.email) {
+    sendLeaveRequestEmail({
+      to: applicant.manager.email,
+      managerName: `${applicant.manager.firstName} ${applicant.manager.lastName}`,
+      employeeName: `${applicant.firstName} ${applicant.lastName}`,
+      employeeId: applicant.employeeId,
+      department: applicant.department?.name ?? '—',
+      leaveType: leaveType.name,
+      days: calcDays(startDate, endDate),
+      startDate: fmtDate(startDate),
+      endDate: fmtDate(endDate),
+      reason: input.reason ?? '',
+    }).catch(() => {});
   }
 
   return leave;
@@ -143,12 +124,6 @@ export async function approveLeave(leaveId: string, approverId?: string) {
     include: LEAVE_INCLUDE,
   });
 
-  // ── Notify all active ADMIN + HR users ────────────────────────────────────
-  const admins = await prisma.user.findMany({
-    where: { isActive: true, role: { in: ['ADMIN', 'HR'] } },
-    select: { firstName: true, lastName: true, email: true },
-  });
-
   let approverName = 'Manager';
   if (approverId) {
     const approver = await prisma.user.findUnique({
@@ -163,23 +138,7 @@ export async function approveLeave(leaveId: string, approverId?: string) {
   const startDateFmt = fmtDate(new Date(updated.startDate));
   const endDateFmt = fmtDate(new Date(updated.endDate));
 
-  // Notify all active ADMIN + HR users
-  for (const admin of admins) {
-    sendLeaveApprovedEmail({
-      to: admin.email,
-      adminName: `${admin.firstName} ${admin.lastName}`,
-      employeeName: `${emp.firstName} ${emp.lastName}`,
-      employeeId: emp.employeeId,
-      department: emp.department?.name ?? '—',
-      leaveType: updated.leaveType.name,
-      days,
-      startDate: startDateFmt,
-      endDate: endDateFmt,
-      approvedBy: approverName,
-    }).catch(() => {});
-  }
-
-  // Notify the employee their leave was approved
+  // Notify only the employee — no broadcast to admin/HR
   sendLeaveStatusEmail({
     to: emp.email,
     employeeName: `${emp.firstName} ${emp.lastName}`,
