@@ -1,4 +1,4 @@
-# Atlas — Backend API
+# POD-Atlas — Backend API
 
 > HR management platform backend built with Express.js, Prisma ORM, and Supabase PostgreSQL.
 
@@ -24,7 +24,7 @@
 
 ## Overview
 
-Atlas is a full-featured HR platform for modern teams. The backend is a RESTful API serving all HR workflows:
+POD-Atlas is a full-featured HR platform for modern teams. The backend is a RESTful API serving all HR workflows:
 
 | Module | What it does |
 |---|---|

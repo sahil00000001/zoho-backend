@@ -21,14 +21,14 @@ const transporter = nodemailer.createTransport({
 export async function sendWelcomeEmail(to: string, firstName: string, role: string, employeeId: string): Promise<void> {
   const roleLabel = ROLE_LABELS[role] ?? role;
   await transporter.sendMail({
-    from: `Atlas <${env.SMTP_USER}>`,
+    from: `POD-Atlas <${env.SMTP_USER}>`,
     to,
-    subject: 'You have been invited to Atlas',
+    subject: 'You have been invited to POD-Atlas',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
-        <h2 style="color: #dc2626;">Welcome to Atlas</h2>
+        <h2 style="color: #dc2626;">Welcome to POD-Atlas</h2>
         <p>Hi ${firstName},</p>
-        <p>You have been added to the <strong>Atlas Employee Portal</strong> with the role of <strong>${roleLabel}</strong>.</p>
+        <p>You have been added to the <strong>POD-Atlas Employee Portal</strong> with the role of <strong>${roleLabel}</strong>.</p>
         <table style="background:#f4f4f4;border-radius:8px;padding:16px;width:100%;margin:20px 0;">
           <tr><td style="color:#555;padding:4px 0;">Employee ID</td><td style="font-weight:bold;">${employeeId}</td></tr>
           <tr><td style="color:#555;padding:4px 0;">Role</td><td style="font-weight:bold;">${roleLabel}</td></tr>
@@ -51,23 +51,33 @@ export async function sendLeaveRequestEmail(opts: {
   managerName: string;
   employeeName: string;
   employeeId: string;
+  employeeEmail: string;
+  designation: string;
   department: string;
   leaveType: string;
   days: number;
   startDate: string;
   endDate: string;
   reason: string;
+  appliedOn: string;
+  leaveId: string;
+  remainingBalance: number;
+  maxDays: number;
 }): Promise<void> {
-  const { to, managerName, employeeName, employeeId, department, leaveType, days, startDate, endDate, reason } = opts;
+  const {
+    to, managerName, employeeName, employeeId, employeeEmail, designation,
+    department, leaveType, days, startDate, endDate, reason,
+    appliedOn, leaveId, remainingBalance, maxDays,
+  } = opts;
   const subject = `Leave Request: ${employeeName} | ${days} Day${days > 1 ? 's' : ''} ${leaveType}`;
   await transporter.sendMail({
-    from: `ATLAS HR <${env.SMTP_USER}>`,
+    from: `POD-Atlas HR <${env.SMTP_USER}>`,
     to,
     subject,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1e293b;">
         <div style="background:linear-gradient(135deg,#dc2626,#f97316);padding:24px 32px;border-radius:12px 12px 0 0;">
-          <h2 style="color:#fff;margin:0;font-size:20px;font-weight:800;letter-spacing:-0.3px;">ATLAS HR</h2>
+          <h2 style="color:#fff;margin:0;font-size:20px;font-weight:800;letter-spacing:-0.3px;">POD-Atlas HR</h2>
           <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px;">Leave Approval Request</p>
         </div>
         <div style="background:#fff;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;padding:28px 32px;">
@@ -76,9 +86,10 @@ export async function sendLeaveRequestEmail(opts: {
             A leave request has been submitted by one of your team members and requires your approval.
           </p>
 
-          <table style="width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;margin-bottom:24px;">
+          <h3 style="margin:0 0 10px;font-size:13px;color:#64748b;text-transform:uppercase;letter-spacing:.08em;">Employee Details</h3>
+          <table style="width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;margin-bottom:20px;">
             <tr style="background:#f8fafc;">
-              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;width:140px;">Employee</td>
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;width:140px;">Name</td>
               <td style="padding:11px 16px;font-size:14px;font-weight:600;color:#0f172a;">${employeeName}</td>
             </tr>
             <tr style="background:#fff;">
@@ -86,16 +97,40 @@ export async function sendLeaveRequestEmail(opts: {
               <td style="padding:11px 16px;font-size:14px;color:#334155;">${employeeId}</td>
             </tr>
             <tr style="background:#f8fafc;">
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Email</td>
+              <td style="padding:11px 16px;font-size:14px;color:#334155;"><a href="mailto:${employeeEmail}" style="color:#dc2626;text-decoration:none;">${employeeEmail}</a></td>
+            </tr>
+            <tr style="background:#fff;">
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Designation</td>
+              <td style="padding:11px 16px;font-size:14px;color:#334155;">${designation}</td>
+            </tr>
+            <tr style="background:#f8fafc;">
               <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Department</td>
               <td style="padding:11px 16px;font-size:14px;color:#334155;">${department}</td>
             </tr>
-            <tr style="background:#fff;">
-              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Leave Type</td>
+          </table>
+
+          <h3 style="margin:0 0 10px;font-size:13px;color:#64748b;text-transform:uppercase;letter-spacing:.08em;">Leave Details</h3>
+          <table style="width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;margin-bottom:20px;">
+            <tr style="background:#f8fafc;">
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;width:140px;">Leave Type</td>
               <td style="padding:11px 16px;font-size:14px;font-weight:600;color:#dc2626;">${leaveType}</td>
             </tr>
+            <tr style="background:#fff;">
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Start Date</td>
+              <td style="padding:11px 16px;font-size:14px;color:#334155;">${startDate}</td>
+            </tr>
             <tr style="background:#f8fafc;">
-              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Duration</td>
-              <td style="padding:11px 16px;font-size:14px;color:#334155;">${startDate} → ${endDate} &nbsp;·&nbsp; <strong>${days} day${days > 1 ? 's' : ''}</strong></td>
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">End Date</td>
+              <td style="padding:11px 16px;font-size:14px;color:#334155;">${endDate}</td>
+            </tr>
+            <tr style="background:#fff;">
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Total Days</td>
+              <td style="padding:11px 16px;font-size:14px;font-weight:700;color:#0f172a;">${days} day${days > 1 ? 's' : ''}</td>
+            </tr>
+            <tr style="background:#f8fafc;">
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Balance (before)</td>
+              <td style="padding:11px 16px;font-size:14px;color:#334155;">${remainingBalance} / ${maxDays} day${maxDays > 1 ? 's' : ''} remaining</td>
             </tr>
             <tr style="background:#fff;">
               <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Reason</td>
@@ -103,11 +138,34 @@ export async function sendLeaveRequestEmail(opts: {
             </tr>
           </table>
 
+          <h3 style="margin:0 0 10px;font-size:13px;color:#64748b;text-transform:uppercase;letter-spacing:.08em;">Request Info</h3>
+          <table style="width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;margin-bottom:24px;">
+            <tr style="background:#f8fafc;">
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;width:140px;">Request ID</td>
+              <td style="padding:11px 16px;font-size:13px;font-family:monospace;color:#334155;">${leaveId}</td>
+            </tr>
+            <tr style="background:#fff;">
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Applied On</td>
+              <td style="padding:11px 16px;font-size:14px;color:#334155;">${appliedOn}</td>
+            </tr>
+            <tr style="background:#f8fafc;">
+              <td style="padding:11px 16px;font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Status</td>
+              <td style="padding:11px 16px;font-size:14px;font-weight:700;color:#f97316;">PENDING APPROVAL</td>
+            </tr>
+          </table>
+
+          <div style="text-align:center;margin:24px 0;">
+            <a href="https://zoho-app-sigma.vercel.app/dashboard/approvals"
+               style="display:inline-block;background:linear-gradient(135deg,#dc2626,#f97316);color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;">
+              Review Request
+            </a>
+          </div>
+
           <p style="font-size:13px;color:#64748b;margin:0;">
-            Please log in to <a href="https://zoho-app-sigma.vercel.app/dashboard/approvals" style="color:#dc2626;font-weight:600;text-decoration:none;">ATLAS HR Portal</a> to approve or reject this request.
+            Please log in to <a href="https://zoho-app-sigma.vercel.app/dashboard/approvals" style="color:#dc2626;font-weight:600;text-decoration:none;">POD-Atlas HR Portal</a> to approve or reject this request.
           </p>
         </div>
-        <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:16px;">ATLAS HR · This is an automated notification</p>
+        <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:16px;">POD-Atlas HR · This is an automated notification</p>
       </div>
     `,
   });
@@ -129,13 +187,13 @@ export async function sendLeaveApprovedEmail(opts: {
   const { to, adminName, employeeName, employeeId, department, leaveType, days, startDate, endDate, approvedBy } = opts;
   const subject = `Leave Approved: ${employeeName} | ${days} Day${days > 1 ? 's' : ''} ${leaveType}`;
   await transporter.sendMail({
-    from: `ATLAS HR <${env.SMTP_USER}>`,
+    from: `POD-Atlas HR <${env.SMTP_USER}>`,
     to,
     subject,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1e293b;">
         <div style="background:linear-gradient(135deg,#dc2626,#f97316);padding:24px 32px;border-radius:12px 12px 0 0;">
-          <h2 style="color:#fff;margin:0;font-size:20px;font-weight:800;letter-spacing:-0.3px;">ATLAS HR</h2>
+          <h2 style="color:#fff;margin:0;font-size:20px;font-weight:800;letter-spacing:-0.3px;">POD-Atlas HR</h2>
           <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px;">Leave Approval Notification</p>
         </div>
         <div style="background:#fff;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;padding:28px 32px;">
@@ -175,10 +233,10 @@ export async function sendLeaveApprovedEmail(opts: {
           </table>
 
           <p style="font-size:13px;color:#64748b;margin:0;">
-            View details in the <a href="https://zoho-app-sigma.vercel.app/dashboard/approvals" style="color:#dc2626;font-weight:600;text-decoration:none;">ATLAS HR Portal</a>.
+            View details in the <a href="https://zoho-app-sigma.vercel.app/dashboard/approvals" style="color:#dc2626;font-weight:600;text-decoration:none;">POD-Atlas HR Portal</a>.
           </p>
         </div>
-        <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:16px;">ATLAS HR · This is an automated notification</p>
+        <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:16px;">POD-Atlas HR · This is an automated notification</p>
       </div>
     `,
   });
@@ -203,13 +261,13 @@ export async function sendLeaveStatusEmail(opts: {
     : `❌ Leave Rejected: ${leaveType} | ${days} Day${days > 1 ? 's' : ''}`;
 
   await transporter.sendMail({
-    from: `ATLAS HR <${env.SMTP_USER}>`,
+    from: `POD-Atlas HR <${env.SMTP_USER}>`,
     to,
     subject,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1e293b;">
         <div style="background:linear-gradient(135deg,#dc2626,#f97316);padding:24px 32px;border-radius:12px 12px 0 0;">
-          <h2 style="color:#fff;margin:0;font-size:20px;font-weight:800;letter-spacing:-0.3px;">ATLAS HR</h2>
+          <h2 style="color:#fff;margin:0;font-size:20px;font-weight:800;letter-spacing:-0.3px;">POD-Atlas HR</h2>
           <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px;">Leave Request Update</p>
         </div>
         <div style="background:#fff;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;padding:28px 32px;">
@@ -242,10 +300,10 @@ export async function sendLeaveStatusEmail(opts: {
           </table>
 
           <p style="font-size:13px;color:#64748b;margin:0;">
-            View your leave status in the <a href="https://zoho-app-sigma.vercel.app/dashboard/leaves" style="color:#dc2626;font-weight:600;text-decoration:none;">ATLAS HR Portal</a>.
+            View your leave status in the <a href="https://zoho-app-sigma.vercel.app/dashboard/leaves" style="color:#dc2626;font-weight:600;text-decoration:none;">POD-Atlas HR Portal</a>.
           </p>
         </div>
-        <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:16px;">ATLAS HR · This is an automated notification</p>
+        <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:16px;">POD-Atlas HR · This is an automated notification</p>
       </div>
     `,
   });
@@ -253,12 +311,12 @@ export async function sendLeaveStatusEmail(opts: {
 
 export async function sendOtpEmail(to: string, otp: string, name: string): Promise<void> {
   await transporter.sendMail({
-    from: `Atlas <${env.SMTP_USER}>`,
+    from: `POD-Atlas <${env.SMTP_USER}>`,
     to,
-    subject: 'Your Login OTP – Atlas',
+    subject: 'Your Login OTP – POD-Atlas',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
-        <h2 style="color: #dc2626;">Atlas</h2>
+        <h2 style="color: #dc2626;">POD-Atlas</h2>
         <p>Hi ${name},</p>
         <p>Your sign-in code (expires in <strong>${env.OTP_EXPIRES_MINUTES} minutes</strong>):</p>
         <div style="background:#f4f4f4;border-radius:8px;padding:20px;text-align:center;

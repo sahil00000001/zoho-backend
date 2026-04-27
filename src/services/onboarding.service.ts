@@ -26,7 +26,7 @@ const DEFAULT_IT_ITEMS = [
   'GitHub / GitLab',
   'Jira / Project Tool',
   'Google Workspace / Microsoft 365',
-  'Atlas Portal Access',
+  'POD-Atlas Portal Access',
   'Cloud Console Access',
 ];
 

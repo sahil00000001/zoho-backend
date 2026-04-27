@@ -12,6 +12,14 @@ function fmtDate(d: Date) {
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+function fmtDateTime(d: Date) {
+  return d.toLocaleString('en-IN', {
+    day: 'numeric', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: true,
+    timeZone: 'Asia/Kolkata',
+  });
+}
+
 function calcDays(start: Date, end: Date) {
   return Math.ceil((end.getTime() - start.getTime()) / 86_400_000) + 1;
 }
@@ -53,30 +61,52 @@ export async function applyLeave(userId: string, input: ApplyLeaveInput) {
     include: LEAVE_INCLUDE,
   });
 
-  // ── Notify manager (or fall back to first active HR/ADMIN) ──────────────
+  // ── Notify assigned manager with full leave details ─────────────────────
   const applicant = await prisma.user.findUnique({
     where: { id: userId },
     select: {
       firstName: true, lastName: true, employeeId: true,
-      email: true,
+      email: true, designation: true,
       department: { select: { name: true } },
       manager: { select: { firstName: true, lastName: true, email: true } },
     },
   });
 
-  // Send email only to the assigned manager — no fallback to admin/HR
   if (applicant?.manager?.email) {
+    // Compute remaining balance for this leave type (this year, approved leaves only)
+    const yearStart = new Date(`${new Date().getFullYear()}-01-01`);
+    const approvedForType = await prisma.leave.findMany({
+      where: {
+        userId,
+        leaveTypeId: input.leaveTypeId,
+        status: 'APPROVED',
+        startDate: { gte: yearStart },
+      },
+      select: { startDate: true, endDate: true },
+    });
+    const usedDays = approvedForType.reduce(
+      (acc, l) => acc + calcDays(new Date(l.startDate), new Date(l.endDate)),
+      0,
+    );
+    const remainingBalance = Math.max(0, leaveType.maxDays - usedDays);
+
     sendLeaveRequestEmail({
       to: applicant.manager.email,
       managerName: `${applicant.manager.firstName} ${applicant.manager.lastName}`,
       employeeName: `${applicant.firstName} ${applicant.lastName}`,
       employeeId: applicant.employeeId,
+      employeeEmail: applicant.email,
+      designation: applicant.designation ?? '—',
       department: applicant.department?.name ?? '—',
       leaveType: leaveType.name,
       days: calcDays(startDate, endDate),
       startDate: fmtDate(startDate),
       endDate: fmtDate(endDate),
       reason: input.reason ?? '',
+      appliedOn: fmtDateTime(leave.createdAt),
+      leaveId: leave.id,
+      remainingBalance,
+      maxDays: leaveType.maxDays,
     }).catch(() => {});
   }
 
