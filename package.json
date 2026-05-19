@@ -1,7 +1,7 @@
 {
-  "name": "zoho-backend",
+  "name": "atlas-pod-api",
   "version": "1.0.0",
-  "description": "Employee Management Portal Backend API",
+  "description": "POD Atlas — HR Management Platform Backend API",
   "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
