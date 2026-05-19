@@ -1,7 +1,6 @@
-# Employee Management Portal — Full Documentation
+# POD Atlas — Full Documentation
 
-**Live API:** `https://zoho-backend-rho.vercel.app`
-**Repository:** `https://github.com/sahil00000001/zoho-backend`
+> Comprehensive reference for the POD Atlas Employee Management Portal backend.
 
 ---
 
@@ -58,7 +57,7 @@ A production-ready REST API backend for an **Employee Management Portal**, suppo
 ## 3. Project Structure
 
 ```
-zoho-backend/
+api/
 │
 ├── api/
 │   └── index.ts              ← Vercel serverless entry point (exports Express app)
@@ -282,9 +281,8 @@ The `?pgbouncer=true&connection_limit=1` on `DATABASE_URL` tells Prisma to disab
 ## 6. API Reference
 
 ### Base URL
-```
-https://zoho-backend-rho.vercel.app
-```
+
+The base URL depends on your deployment environment. For local development this defaults to `http://localhost:3000`. In production the value is configured via the deployment platform.
 
 ### Standard Response Format
 

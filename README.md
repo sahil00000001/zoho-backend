@@ -1,9 +1,6 @@
-# Atlas — Backend API
+# POD Atlas — Backend API
 
-> HR management platform backend built with Express.js, Prisma ORM, and Supabase PostgreSQL.
-
-**Live API:** `https://zoho-backend-rho.vercel.app`
-**Frontend:** `https://zoho-app-sigma.vercel.app`
+RESTful API service for the POD Atlas HR management platform. Built with Express.js, Prisma ORM, and PostgreSQL.
 
 ---
 
@@ -11,31 +8,33 @@
 
 - [Overview](#overview)
 - [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
 - [Project Structure](#project-structure)
-- [Modules & API Reference](#modules--api-reference)
+- [API Reference](#api-reference)
 - [Database Schema](#database-schema)
-- [Authentication Flow](#authentication-flow)
-- [Role Permissions](#role-permissions)
+- [Authentication](#authentication)
+- [Role-Based Access Control](#role-based-access-control)
 - [Environment Variables](#environment-variables)
 - [Local Development](#local-development)
 - [Deployment](#deployment)
+- [Initial Setup](#initial-setup)
 
 ---
 
 ## Overview
 
-Atlas is a full-featured HR platform for modern teams. The backend is a RESTful API serving all HR workflows:
+POD Atlas is an enterprise HR platform that supports the full employee lifecycle — from onboarding through daily operations and offboarding. This service exposes a RESTful HTTP API consumed by the Atlas web frontend.
 
-| Module | What it does |
+| Module | Responsibility |
 |---|---|
-| **Auth** | Passwordless OTP login via email, JWT access + refresh tokens |
-| **Dashboard** | Role-aware KPI stats and activity feed |
-| **Attendance** | GPS check-in/out, WFH toggle, overtime, regularization requests |
-| **Leaves** | Apply/approve leaves, balance tracking, holiday calendar, comp-off |
-| **Onboarding** | 30-day task checklist, laptop/access card asset tracking, IT provisioning |
-| **Profile** | Personal info, address, emergency contact, skills, certifications, KRA upload |
-| **Announcements** | Company & department notices, birthday/anniversary celebrations |
-| **Users** | Employee directory, CRUD with role-based access, welcome email on creation |
+| Auth | Passwordless OTP login, JWT access + refresh token issuance |
+| Dashboard | Role-aware KPIs and recent activity aggregation |
+| Attendance | Geolocation check-in/out, WFH tracking, overtime, regularization |
+| Leaves | Leave applications, approvals, balance tracking, holiday calendar, comp-off |
+| Onboarding | Task checklists, asset assignment, IT provisioning |
+| Profile | Personal info, skills, certifications, KRA documents |
+| Announcements | Company and department notices, birthday and anniversary feeds |
+| Users | Employee directory, user lifecycle management |
 
 ---
 
@@ -43,67 +42,54 @@ Atlas is a full-featured HR platform for modern teams. The backend is a RESTful 
 
 | Layer | Technology |
 |---|---|
-| Runtime | Node.js 20 |
+| Runtime | Node.js 20+ |
 | Framework | Express.js |
-| ORM | Prisma v5 |
-| Database | PostgreSQL via Supabase |
-| Auth | JWT — access token (15 min) + refresh token (7 days, rotated) |
-| Email | Nodemailer + Gmail SMTP (port 465, secure) |
+| Language | TypeScript (strict mode) |
+| ORM | Prisma 5 |
+| Database | PostgreSQL |
+| Authentication | JSON Web Tokens (access + rotating refresh) |
 | Validation | Zod |
-| Language | TypeScript (strict) |
+| Email | Nodemailer (SMTP) |
+| Object Storage | S3-compatible (Supabase Storage) |
 | Deployment | Vercel Serverless Functions |
 
 ---
 
-## Project Structure
+## Architecture
+
+The codebase follows a layered architecture with a clear separation of concerns:
 
 ```
-zoho-backend/
-├── prisma/
-│   └── schema.prisma           # Full DB schema (20+ models)
-├── src/
-│   ├── app.ts                  # Express app + route mounting
-│   ├── config/
-│   │   └── env.ts              # Zod-validated environment config
-│   ├── controllers/            # HTTP handlers (thin, delegate to services)
-│   │   ├── auth.controller.ts
-│   │   ├── attendance.controller.ts
-│   │   ├── regularization.controller.ts
-│   │   ├── leave.controller.ts
-│   │   ├── leaveType.controller.ts
-│   │   ├── holiday.controller.ts
-│   │   ├── compoff.controller.ts
-│   │   ├── onboarding.controller.ts
-│   │   ├── profile.controller.ts
-│   │   ├── announcement.controller.ts
-│   │   ├── user.controller.ts
-│   │   └── dashboard.controller.ts
-│   ├── services/               # All business logic lives here
-│   │   ├── auth.service.ts
-│   │   ├── attendance.service.ts
-│   │   ├── regularization.service.ts
-│   │   ├── leave.service.ts
-│   │   ├── holiday.service.ts
-│   │   ├── compoff.service.ts
-│   │   ├── onboarding.service.ts
-│   │   ├── profile.service.ts
-│   │   ├── announcement.service.ts
-│   │   ├── email.service.ts
-│   │   ├── user.service.ts
-│   │   └── dashboard.service.ts
-│   ├── routes/                 # Express routers
-│   ├── middleware/
-│   │   ├── auth.ts             # authenticate + authorize(roles)
-│   │   └── errorHandler.ts     # Global error handler
-│   ├── schemas/                # Zod request validation schemas
-│   ├── utils/
-│   │   └── response.ts         # sendSuccess / sendError helpers
-│   └── lib/
-│       └── prisma.ts           # Prisma client singleton
-└── vercel.json                 # Vercel deployment config
+HTTP Request
+    │
+    ▼
+┌──────────────┐
+│   Routes     │  Express routers — bind paths to controllers
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│  Middleware  │  Auth, validation (Zod), error handling
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│ Controllers  │  Thin HTTP handlers — parse input, call service, return response
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│   Services   │  Business logic, transactions, side effects
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│    Prisma    │  Type-safe database access
+└──────────────┘
 ```
 
 **Standard response envelope:**
+
 ```json
 { "success": true,  "data": { ... } }
 { "success": false, "error": { "code": "VALIDATION_ERROR", "message": "..." } }
@@ -111,200 +97,180 @@ zoho-backend/
 
 ---
 
-## Modules & API Reference
+## Project Structure
 
-> All routes require `Authorization: Bearer <accessToken>` unless marked **Public**.
+```
+api/
+├── prisma/
+│   ├── schema.prisma        # Database schema (20+ models)
+│   └── seed.ts              # Reference data seeding
+├── src/
+│   ├── app.ts               # Express application factory
+│   ├── server.ts            # HTTP server entry point
+│   ├── config/
+│   │   └── env.ts           # Typed environment configuration
+│   ├── controllers/         # HTTP request handlers
+│   ├── services/            # Business logic
+│   ├── routes/              # Express routers
+│   ├── middleware/          # Auth, validation, error handling
+│   ├── schemas/             # Zod request schemas
+│   ├── lib/                 # Prisma client, S3 client
+│   └── utils/               # Shared utilities (JWT, OTP, responses)
+├── api/
+│   └── index.ts             # Vercel serverless entry point
+└── vercel.json              # Deployment configuration
+```
 
 ---
 
-### 🔐 Auth — `/api/auth`
+## API Reference
+
+All routes require an `Authorization: Bearer <accessToken>` header unless marked **Public**.
+
+### Auth — `/api/auth`
 
 | Method | Path | Access | Description |
 |---|---|---|---|
-| POST | `/login` | Public | Send 6-digit OTP to email (expires 10 min) |
-| POST | `/verify-otp` | Public | Verify OTP → returns JWT pair + user |
-| POST | `/refresh` | Public | Rotate refresh token → new token pair |
-| POST | `/logout` | Auth | Invalidate refresh token |
-| GET | `/me` | Auth | Current authenticated user |
+| POST | `/login` | Public | Send 6-digit OTP to user email |
+| POST | `/verify-otp` | Public | Verify OTP and issue JWT pair |
+| POST | `/refresh` | Public | Rotate refresh token |
+| POST | `/logout` | Auth | Invalidate active refresh token |
+| GET | `/me` | Auth | Return the authenticated user |
 
----
-
-### 📊 Dashboard — `/api/dashboard`
+### Dashboard — `/api/dashboard`
 
 | Method | Path | Access | Description |
 |---|---|---|---|
 | GET | `/stats` | Auth | Role-specific KPI metrics |
-| GET | `/activity` | Auth | Recent leave/attendance activity |
+| GET | `/activity` | Auth | Recent leave and attendance activity |
 
-Stats by role:
-- **Employee** — leaves used this year, pending requests
-- **Manager** — team size, present/on-leave today, pending approvals
-- **HR/Admin** — total employees, present/on-leave/absent today, pending approvals
-
----
-
-### 🕐 Attendance — `/api/attendance`
+### Attendance — `/api/attendance`
 
 | Method | Path | Access | Description |
 |---|---|---|---|
-| POST | `/check-in` | Auth | Clock in (body: `lat`, `lng`, `address`, `isWFH`) |
-| POST | `/check-out` | Auth | Clock out; auto-calculates `workHours` + `overtimeHours` |
-| GET | `/today` | Auth | Today's check-in/out status |
-| GET | `/history` | Auth | Personal records (`?limit=N`) |
-| GET | `/monthly` | Auth | Monthly records (`?month=YYYY-MM`) |
-| GET | `/team` | Manager/HR/Admin | Team attendance for a date (`?date=YYYY-MM-DD`) |
+| POST | `/check-in` | Auth | Clock in with location and WFH flag |
+| POST | `/check-out` | Auth | Clock out and compute work and overtime hours |
+| GET | `/today` | Auth | Current day check-in status |
+| GET | `/history` | Auth | Personal attendance history |
+| GET | `/monthly` | Auth | Records for a given month |
+| GET | `/team` | Manager+ | Team attendance for a given date |
 
-Overtime = work hours beyond 9h standard day; stored as `overtimeHours` on the record.
-
----
-
-### 📋 Regularization — `/api/attendance/regularizations`
+### Regularization — `/api/attendance/regularizations`
 
 | Method | Path | Access | Description |
 |---|---|---|---|
-| POST | `/` | Auth | Submit correction request |
-| GET | `/` | Auth | Own requests; all requests for managers |
-| PATCH | `/:id/approve` | Manager/HR/Admin | Approve & apply to attendance record |
-| PATCH | `/:id/reject` | Manager/HR/Admin | Reject with optional note |
+| POST | `/` | Auth | Submit attendance correction request |
+| GET | `/` | Auth | Own requests, or team requests for managers |
+| PATCH | `/:id/approve` | Manager+ | Approve and apply correction |
+| PATCH | `/:id/reject` | Manager+ | Reject with optional note |
 
----
-
-### 🌿 Leaves — `/api/leaves`
+### Leaves — `/api/leaves`
 
 | Method | Path | Access | Description |
 |---|---|---|---|
-| GET | `/my` | Auth | My leave applications |
-| POST | `/` | Auth | Apply for leave |
+| GET | `/my` | Auth | Own leave applications |
+| POST | `/` | Auth | Submit a leave application |
 | PATCH | `/:id/cancel` | Auth | Cancel own pending leave |
-| GET | `/` | Manager/HR/Admin | All applications (`?status=&userId=`) |
-| PATCH | `/:id/approve` | Manager/HR/Admin | Approve |
-| PATCH | `/:id/reject` | Manager/HR/Admin | Reject with reason |
+| GET | `/` | Manager+ | All applications, filterable |
+| PATCH | `/:id/approve` | Manager+ | Approve a leave |
+| PATCH | `/:id/reject` | Manager+ | Reject with reason |
 | GET | `/balance/me` | Auth | Leave balance per type |
 
 ### Leave Types — `/api/leave-types`
 
 | Method | Path | Access | Description |
 |---|---|---|---|
-| GET | `/` | Auth | All leave types with `daysAllowed` |
+| GET | `/` | Auth | All leave types with allowed days |
 
----
-
-### 🗓️ Holidays — `/api/holidays`
+### Holidays — `/api/holidays`
 
 | Method | Path | Access | Description |
 |---|---|---|---|
-| GET | `/` | Auth | All holidays (`?year=2026`) |
-| POST | `/seed` | HR/Admin | Seed 15 India national holidays for 2026 |
+| GET | `/` | Auth | List holidays for a given year |
+| POST | `/seed` | HR/Admin | Seed national holidays |
 | POST | `/` | HR/Admin | Add a custom holiday |
 | DELETE | `/:id` | HR/Admin | Remove a holiday |
 
----
-
-### 🏖️ Comp-Off — `/api/compoffs`
+### Comp-Off — `/api/compoffs`
 
 | Method | Path | Access | Description |
 |---|---|---|---|
-| GET | `/` | Auth | My comp-off requests |
-| POST | `/` | Auth | Request comp-off (`earnedDate`, `reason`) |
+| GET | `/` | Auth | Own comp-off requests |
+| POST | `/` | Auth | Request compensatory off |
 | GET | `/balance` | Auth | Available comp-off days |
-| PATCH | `/:id/approve` | Manager/HR/Admin | Approve |
-| PATCH | `/:id/reject` | Manager/HR/Admin | Reject |
+| PATCH | `/:id/approve` | Manager+ | Approve a request |
+| PATCH | `/:id/reject` | Manager+ | Reject a request |
 
-Comp-offs expire **3 months** after the earned date.
+Comp-offs expire 3 months after the earned date.
 
----
-
-### 🚀 Onboarding — `/api/onboarding`
+### Onboarding — `/api/onboarding`
 
 #### Checklist
 
 | Method | Path | Access | Description |
 |---|---|---|---|
-| POST | `/init/:userId` | HR/Admin | Create 15 default tasks + 8 IT items for employee |
-| GET | `/me` | Auth | My checklist, assets, IT provisions |
-| GET | `/:userId` | Manager/HR/Admin | Any employee's onboarding data |
-| POST | `/:userId/tasks` | Manager/HR/Admin | Add custom task |
+| POST | `/init/:userId` | HR/Admin | Seed default checklist for an employee |
+| GET | `/me` | Auth | Own checklist, assets, and IT provisions |
+| GET | `/:userId` | Manager+ | Any employee's onboarding data |
+| POST | `/:userId/tasks` | Manager+ | Add custom task |
 | PATCH | `/tasks/:id` | Auth | Update task status |
 | DELETE | `/tasks/:id` | HR/Admin | Delete task |
-
-Default checklist seeded per employee (15 tasks across 5 time bands):
-
-| Day | Tasks |
-|---|---|
-| Day 1 | Paperwork, Office tour, Email setup, Access card, Meet manager |
-| Days 2–3 | Laptop + software, VPN, Slack, GitHub access |
-| Day 3–7 | HR policy orientation, Compliance training, First project |
-| Day 15 | Mid-onboarding HR check-in |
-| Day 30 | 30-day manager review |
 
 #### Assets
 
 | Method | Path | Access | Description |
 |---|---|---|---|
-| GET | `/assets/list` | Manager/HR/Admin | All assets with current assignee |
-| POST | `/assets` | HR/Admin | Register asset (type, name, serial, model) |
-| POST | `/assets/:id/assign` | HR/Admin | Assign to employee (transaction) |
-| PATCH | `/assets/assignments/:id/return` | HR/Admin | Mark returned (transaction) |
-| GET | `/assets/my` | Auth | My assigned assets |
-| GET | `/assets/user/:userId` | Manager/HR/Admin | Any employee's assets |
-
-Asset types: `LAPTOP`, `ACCESS_CARD`, `MONITOR`, `KEYBOARD`, `MOUSE`, `PHONE`, `OTHER`
+| GET | `/assets/list` | Manager+ | Asset registry with current assignees |
+| POST | `/assets` | HR/Admin | Register a new asset |
+| POST | `/assets/:id/assign` | HR/Admin | Assign an asset to an employee |
+| PATCH | `/assets/assignments/:id/return` | HR/Admin | Mark asset as returned |
+| GET | `/assets/my` | Auth | Own assigned assets |
+| GET | `/assets/user/:userId` | Manager+ | Any employee's assets |
 
 #### IT Provisioning
 
 | Method | Path | Access | Description |
 |---|---|---|---|
-| GET | `/it-provisions` | HR/Admin | All IT provisions (`?userId=`) |
+| GET | `/it-provisions` | HR/Admin | All IT provisions, filterable by user |
 | PATCH | `/it-provisions/:id` | HR/Admin | Update status |
-| POST | `/:userId/it-provisions` | HR/Admin | Add IT item |
+| POST | `/:userId/it-provisions` | HR/Admin | Add an IT item |
 
-Default IT items seeded: Email, Slack, VPN, GitHub/GitLab, Jira, Google Workspace, HR Portal, Cloud Console
-
----
-
-### 👤 Profile — `/api/profile`
+### Profile — `/api/profile`
 
 | Method | Path | Access | Description |
 |---|---|---|---|
-| GET | `/me` | Auth | Full profile (user + profile + skills + certs + KRA) |
-| PATCH | `/me` | Auth | Update photo (base64), bio, address, emergency contact, DOB |
+| GET | `/me` | Auth | Full profile (user, profile, skills, certs, KRA) |
+| PATCH | `/me` | Auth | Update profile fields |
 | PATCH | `/me/basic` | Auth | Update phone / designation |
-| POST | `/me/skills` | Auth | Add skill (`name`, `level`) |
+| POST | `/me/skills` | Auth | Add skill |
 | DELETE | `/me/skills/:id` | Auth | Remove skill |
 | POST | `/me/certifications` | Auth | Add certification |
-| DELETE | `/me/certifications/:id` | Auth | Remove |
-| GET | `/me/kra` | Auth | My KRA documents |
-| POST | `/me/kra` | Auth | Upload KRA (`title`, `period`, `fileUrl` base64, `fileName`) |
-| DELETE | `/me/kra/:id` | Auth | Delete KRA |
-| GET | `/kra/all` | Manager/HR/Admin | All employees' KRA submissions |
-| GET | `/:userId` | Manager/HR/Admin | Any employee's full profile |
+| DELETE | `/me/certifications/:id` | Auth | Remove certification |
+| GET | `/me/kra` | Auth | Own KRA documents |
+| POST | `/me/kra` | Auth | Upload KRA document |
+| DELETE | `/me/kra/:id` | Auth | Delete KRA document |
+| GET | `/kra/all` | Manager+ | All employees' KRA submissions |
+| GET | `/:userId` | Manager+ | Any employee's full profile |
 
----
-
-### 📢 Announcements — `/api/announcements`
+### Announcements — `/api/announcements`
 
 | Method | Path | Access | Description |
 |---|---|---|---|
-| GET | `/` | Auth | Feed: company-wide + own dept, non-expired, pinned first |
-| GET | `/celebrations` | Auth | Birthdays + work anniversaries in next 7 days |
+| GET | `/` | Auth | Active feed (pinned first, scoped to dept) |
+| GET | `/celebrations` | Auth | Birthdays and anniversaries in the next 7 days |
 | GET | `/all` | HR/Admin | All announcements including expired |
-| POST | `/` | Manager/HR/Admin | Create announcement |
-| PATCH | `/:id` | Manager/HR/Admin | Edit / toggle pin / change priority |
+| POST | `/` | Manager+ | Create announcement |
+| PATCH | `/:id` | Manager+ | Edit or pin |
 | DELETE | `/:id` | HR/Admin | Delete |
 
-Announcement priorities: `HIGH` (red stripe), `NORMAL`, `LOW`
-Types: `COMPANY` (all staff) or `DEPARTMENT` (specific dept only)
-
----
-
-### 👥 Users & Directory — `/api/users`
+### Users — `/api/users`
 
 | Method | Path | Access | Description |
 |---|---|---|---|
-| GET | `/` | Auth | All users (`?role=&departmentId=&isActive=&search=`) |
-| GET | `/departments` | Auth | All departments |
+| GET | `/` | Auth | List users, filterable |
+| GET | `/departments` | Auth | List departments |
 | GET | `/:id` | Auth | Single user |
-| POST | `/` | HR/Admin | Create user (auto-sends welcome email with credentials) |
+| POST | `/` | HR/Admin | Create user (welcome email sent on success) |
 | PUT | `/:id` | HR/Admin | Update user details |
 | DELETE | `/:id` | Admin | Deactivate user |
 
@@ -312,149 +278,180 @@ Types: `COMPANY` (all staff) or `DEPARTMENT` (specific dept only)
 
 | Method | Path | Description |
 |---|---|---|
-| GET | `/api/health` | Returns DB connection status |
+| GET | `/api/health` | Returns service and database status |
 
 ---
 
 ## Database Schema
 
-### Key Models
-
 ```
-User                    — Core employee record
-├── UserProfile         — Extended info (photo, address, emergency, DOB)
-├── Skill               — Skills with proficiency levels
-├── Certification       — Professional certifications
-├── KRADocument         — KRA file uploads (base64)
-├── Attendance          — Daily check-in/out records
-├── AttendanceRegularization — Correction requests
-├── Leave               — Leave applications
-├── CompOff             — Compensatory off requests
-├── OnboardingTask      — Per-employee 30-day task checklist
-├── AssetAssignment     — Asset-to-employee assignment history
-├── ITProvision         — IT setup tracking per employee
-└── Announcement        — Authored announcements
+User                            Core employee record
+├── UserProfile                 Extended profile data
+├── Skill                       Skills with proficiency levels
+├── Certification               Professional certifications
+├── KRADocument                 KRA file uploads
+├── Attendance                  Daily check-in/out records
+├── AttendanceRegularization    Correction requests
+├── Leave                       Leave applications
+├── CompOff                     Compensatory off requests
+├── OnboardingTask              Per-employee onboarding checklist
+├── AssetAssignment             Asset-to-employee assignments
+├── ITProvision                 IT setup tracking
+└── Announcement                Authored announcements
 
-Department              — Org units
-Asset                   — Physical asset registry
-Holiday                 — National + company holidays
-LeaveType               — Leave type definitions (Annual, Sick, etc.)
-RefreshToken            — Stored refresh tokens (rotation)
-OTP                     — Active OTP codes (TTL: 10 min)
+Department                      Organisational units
+Asset                           Physical asset registry
+Holiday                         Holiday calendar
+LeaveType                       Leave type definitions
+RefreshToken                    Persisted refresh tokens (rotation)
+OTP                             Active one-time passwords
 ```
+
+See [prisma/schema.prisma](prisma/schema.prisma) for the full schema.
 
 ---
 
-## Authentication Flow
+## Authentication
+
+The API uses passwordless authentication via one-time passwords delivered by email, followed by short-lived JWT access tokens and long-lived refresh tokens.
 
 ```
-Client                          Backend                         Gmail
-  │                                │                              │
-  ├──POST /auth/login {email}──────►                              │
-  │                                ├── Validate user in DB        │
-  │                                ├── Generate 6-digit OTP       │
-  │                                ├── Store OTP (expires 10m)    │
-  │                                ├──────── Send email ──────────►
-  │◄── { message: "OTP sent" } ────┤                              │
-  │                                │                              │
-  ├──POST /auth/verify-otp─────────►                              │
-  │   { email, otp }               ├── Validate OTP + expiry      │
-  │                                ├── Generate accessToken (15m) │
-  │                                ├── Generate refreshToken (7d) │
-  │◄── { accessToken,              ├── Store refreshToken in DB   │
-  │      refreshToken, user } ─────┤                              │
-  │                                │                              │
-  ├── All requests:                │                              │
-  │   Authorization: Bearer <at>   │                              │
-  │                                │                              │
-  ├── On 401: POST /auth/refresh───►                              │
-  │   { refreshToken }             ├── Validate + rotate token    │
-  │◄── { new accessToken,          │                              │
-  │      new refreshToken } ───────┤                              │
+Client                              Backend                             Email
+  │                                   │                                   │
+  ├── POST /auth/login {email} ──────►│                                   │
+  │                                   ├── Generate 6-digit OTP            │
+  │                                   ├── Store OTP (TTL 10 min)          │
+  │                                   ├── Deliver OTP ─────────────────► │
+  │◄── { message: "OTP sent" } ───────┤                                   │
+  │                                   │                                   │
+  ├── POST /auth/verify-otp ─────────►│                                   │
+  │     { email, otp }                ├── Validate OTP                    │
+  │                                   ├── Issue access token (15m)        │
+  │                                   ├── Issue refresh token (7d)        │
+  │◄── { accessToken,                 ├── Persist refresh token           │
+  │      refreshToken, user } ────────┤                                   │
+  │                                   │                                   │
+  ├── Authorization: Bearer <at> ─────►   (all subsequent requests)       │
+  │                                   │                                   │
+  ├── On 401: POST /auth/refresh ────►│                                   │
+  │     { refreshToken }              ├── Rotate refresh token            │
+  │◄── new { accessToken,             │                                   │
+  │      refreshToken } ──────────────┤                                   │
 ```
+
+Access tokens expire after 15 minutes. Refresh tokens rotate on each use and expire after 7 days.
 
 ---
 
-## Role Permissions
+## Role-Based Access Control
 
-| Feature | Employee | Manager | HR | Admin |
-|---|---|---|---|---|
-| View own attendance | ✅ | ✅ | ✅ | ✅ |
-| View team attendance | — | ✅ | ✅ | ✅ |
-| Apply/cancel leave | ✅ | ✅ | ✅ | ✅ |
-| Approve/reject leave | — | ✅ | ✅ | ✅ |
-| Submit regularization | ✅ | ✅ | ✅ | ✅ |
-| Approve regularization | — | ✅ | ✅ | ✅ |
-| Request comp-off | ✅ | ✅ | ✅ | ✅ |
-| Approve comp-off | — | ✅ | ✅ | ✅ |
-| Post announcements | — | ✅ | ✅ | ✅ |
-| Delete announcements | — | — | ✅ | ✅ |
-| View own onboarding | ✅ | ✅ | ✅ | ✅ |
-| Manage onboarding for others | — | ✅ | ✅ | ✅ |
-| Manage assets/IT | — | — | ✅ | ✅ |
-| View/upload own KRA | ✅ | ✅ | ✅ | ✅ |
-| View all KRAs | — | ✅ | ✅ | ✅ |
-| Create users | — | — | ✅ | ✅ |
-| Deactivate users | — | — | — | ✅ |
-| Manage holidays | — | — | ✅ | ✅ |
-| Seed national holidays | — | — | ✅ | ✅ |
+| Capability | Employee | Manager | HR | Admin |
+|---|:---:|:---:|:---:|:---:|
+| View own attendance | ✓ | ✓ | ✓ | ✓ |
+| View team attendance | — | ✓ | ✓ | ✓ |
+| Apply / cancel own leave | ✓ | ✓ | ✓ | ✓ |
+| Approve / reject leave | — | ✓ | ✓ | ✓ |
+| Submit regularization | ✓ | ✓ | ✓ | ✓ |
+| Approve regularization | — | ✓ | ✓ | ✓ |
+| Request comp-off | ✓ | ✓ | ✓ | ✓ |
+| Approve comp-off | — | ✓ | ✓ | ✓ |
+| Post announcements | — | ✓ | ✓ | ✓ |
+| Delete announcements | — | — | ✓ | ✓ |
+| View own onboarding | ✓ | ✓ | ✓ | ✓ |
+| Manage onboarding for others | — | ✓ | ✓ | ✓ |
+| Manage assets and IT provisioning | — | — | ✓ | ✓ |
+| Upload own KRA | ✓ | ✓ | ✓ | ✓ |
+| View all KRAs | — | ✓ | ✓ | ✓ |
+| Create users | — | — | ✓ | ✓ |
+| Deactivate users | — | — | — | ✓ |
+| Manage holidays | — | — | ✓ | ✓ |
+
+Role checks are enforced by the `authorize(...roles)` middleware on every protected route.
 
 ---
 
 ## Environment Variables
 
+A complete reference of supported variables is provided in [.env.example](.env.example).
+
 ```env
-# Database (Supabase)
-DATABASE_URL=postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres?pgbouncer=true
-DIRECT_URL=postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres
+# Database
+DATABASE_URL=postgresql://user:password@host:6543/postgres
+DIRECT_URL=postgresql://user:password@host:5432/postgres
 
-# JWT secrets (min 32 chars, use different values)
-JWT_ACCESS_SECRET=change-me-min-32-characters-long
-JWT_REFRESH_SECRET=change-me-min-32-characters-different
+# JWT secrets — generate a strong unique value for each
+JWT_ACCESS_SECRET=<min 64 random characters>
+JWT_REFRESH_SECRET=<min 64 random characters>
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
 
-# Gmail SMTP
-SMTP_USER=youremail@gmail.com
-SMTP_PASS=xxxx-xxxx-xxxx-xxxx   # 16-char Google App Password
+# One-time password
+OTP_EXPIRES_MINUTES=10
 
-# Server
-PORT=3000
+# SMTP (e.g. Gmail with App Password)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=<smtp username>
+SMTP_PASS=<smtp password or app password>
+SMTP_FROM="POD Atlas <no-reply@example.com>"
+
+# Application
 NODE_ENV=development
+PORT=3000
 CORS_ORIGIN=http://localhost:3001
+FRONTEND_URL=http://localhost:3001
+
+# Object storage (S3-compatible)
+SUPABASE_S3_ENDPOINT=
+SUPABASE_S3_REGION=ap-south-1
+SUPABASE_S3_ACCESS_KEY_ID=
+SUPABASE_S3_SECRET_ACCESS_KEY=
+SUPABASE_STORAGE_BUCKET=atlas-files
+SUPABASE_PUBLIC_URL=
 ```
 
-**Getting a Gmail App Password:**
-1. Go to `myaccount.google.com/security`
-2. Enable 2-Step Verification
-3. Search for "App passwords" → Generate for "Mail"
-4. Use the 16-character code as `SMTP_PASS`
+**Generating JWT secrets:**
+
+```bash
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+```
 
 ---
 
 ## Local Development
 
+**Prerequisites:** Node.js 20+, npm, access to a PostgreSQL database.
+
 ```bash
-# Install
+# Install dependencies
 npm install
 
 # Configure environment
 cp .env.example .env
-# Fill in your credentials
+# Fill in your credentials in .env
 
-# Push schema to database
+# Apply schema to database
 npx prisma db push
 
-# Start dev server (with hot reload)
+# (Optional) Seed reference data
+npx prisma db seed
+
+# Start the dev server (hot reload)
 npm run dev
-# API available at http://localhost:3000
 
 # Type check
 npx tsc --noEmit
 
-# Open Prisma Studio (visual DB browser)
+# Inspect the database visually
 npx prisma studio
-# → http://localhost:5555
+```
 
-# Health check
+The service listens on `http://localhost:3000` by default.
+
+**Health check:**
+
+```bash
 curl http://localhost:3000/api/health
 ```
 
@@ -462,28 +459,41 @@ curl http://localhost:3000/api/health
 
 ## Deployment
 
-**Platform:** Vercel (Serverless)
+The API targets Vercel Serverless Functions. See [vercel.json](vercel.json) for the deployment configuration.
 
 ```bash
-# Deploy via Vercel CLI
+# Deploy to production
 npx vercel --prod
-
-# Or push to main branch — Vercel auto-deploys
-git push origin main
 ```
 
-Set all environment variables in **Vercel Dashboard → Project → Settings → Environment Variables**.
+All environment variables must be configured in **Vercel → Project → Settings → Environment Variables**.
 
-Use the Supabase **Session Pooler** URL (port 5432) for `DIRECT_URL` (required for Prisma migrations on serverless).
+When deploying to a serverless platform, use the database provider's **transaction pooler** URL (typically port 6543) for `DATABASE_URL`, and the **direct connection** URL (port 5432) for `DIRECT_URL`. Prisma migrations require a direct connection.
 
 ---
 
-## First-Time Setup Checklist
+## Initial Setup
 
-After deploying:
-1. Create first Admin user via Prisma Studio (set `role: ADMIN`, `isActive: true`)
-2. Add leave types (Annual Leave, Sick Leave, etc.) in `LeaveType` table
-3. Seed national holidays via `POST /api/holidays/seed`
-4. Create departments in `Department` table
-5. Add employees via User Management → they receive a welcome email
-6. Initialize onboarding for new hires via `POST /api/onboarding/init/:userId`
+After your first deployment:
+
+1. Create the first Admin user directly in the database (set `role = 'ADMIN'` and `isActive = true`).
+2. Populate the `LeaveType` table with the leave categories used by your organisation.
+3. Seed the holiday calendar via `POST /api/holidays/seed`, or insert custom entries.
+4. Create departments in the `Department` table.
+5. Use the Admin console (`/api/users`) to onboard employees — they will receive a welcome email automatically.
+6. Initialise the onboarding checklist for each new hire via `POST /api/onboarding/init/:userId`.
+
+---
+
+## Contributing
+
+Use the `dev` branch for active development. All pull requests should target `dev` and pass type checks before being merged.
+
+```bash
+git checkout dev
+git pull origin dev
+git checkout -b feature/<short-description>
+# make changes
+npx tsc --noEmit
+git push origin feature/<short-description>
+```

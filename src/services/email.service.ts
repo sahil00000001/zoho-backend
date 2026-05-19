@@ -35,7 +35,7 @@ export async function sendWelcomeEmail(to: string, firstName: string, role: stri
           <tr><td style="color:#555;padding:4px 0;">Email</td><td style="font-weight:bold;">${to}</td></tr>
         </table>
         <p>To sign in, visit the portal and enter your email — a one-time password will be sent to this address.</p>
-        <a href="https://zoho-app-sigma.vercel.app/login"
+        <a href="${env.FRONTEND_URL}/login"
            style="display:inline-block;background:#dc2626;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;margin:8px 0;">
           Sign in to Portal
         </a>
@@ -104,7 +104,7 @@ export async function sendLeaveRequestEmail(opts: {
           </table>
 
           <p style="font-size:13px;color:#64748b;margin:0;">
-            Please log in to <a href="https://zoho-app-sigma.vercel.app/dashboard/approvals" style="color:#dc2626;font-weight:600;text-decoration:none;">ATLAS HR Portal</a> to approve or reject this request.
+            Please log in to <a href="${env.FRONTEND_URL}/dashboard/approvals" style="color:#dc2626;font-weight:600;text-decoration:none;">ATLAS HR Portal</a> to approve or reject this request.
           </p>
         </div>
         <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:16px;">ATLAS HR · This is an automated notification</p>
@@ -175,7 +175,7 @@ export async function sendLeaveApprovedEmail(opts: {
           </table>
 
           <p style="font-size:13px;color:#64748b;margin:0;">
-            View details in the <a href="https://zoho-app-sigma.vercel.app/dashboard/approvals" style="color:#dc2626;font-weight:600;text-decoration:none;">ATLAS HR Portal</a>.
+            View details in the <a href="${env.FRONTEND_URL}/dashboard/approvals" style="color:#dc2626;font-weight:600;text-decoration:none;">ATLAS HR Portal</a>.
           </p>
         </div>
         <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:16px;">ATLAS HR · This is an automated notification</p>
@@ -242,7 +242,7 @@ export async function sendLeaveStatusEmail(opts: {
           </table>
 
           <p style="font-size:13px;color:#64748b;margin:0;">
-            View your leave status in the <a href="https://zoho-app-sigma.vercel.app/dashboard/leaves" style="color:#dc2626;font-weight:600;text-decoration:none;">ATLAS HR Portal</a>.
+            View your leave status in the <a href="${env.FRONTEND_URL}/dashboard/leaves" style="color:#dc2626;font-weight:600;text-decoration:none;">ATLAS HR Portal</a>.
           </p>
         </div>
         <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:16px;">ATLAS HR · This is an automated notification</p>
