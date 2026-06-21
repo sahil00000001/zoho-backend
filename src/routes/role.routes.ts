@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { authenticate, authorize } from '../middleware/auth';
+import { cacheControl } from '../middleware/cache';
 import * as roleController from '../controllers/role.controller';
 
 const router = Router();
 
 router.use(authenticate);
 
-router.get('/modules', roleController.getModules);
+router.get('/modules', cacheControl(300), roleController.getModules);
 router.get('/my-permissions', roleController.getMyPermissions);
 router.get('/', roleController.listRoles);
 router.get('/:id', roleController.getRole);

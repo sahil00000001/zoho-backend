@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validate';
+import { cacheControl } from '../middleware/cache';
 import { createUserSchema, updateUserSchema } from '../schemas/user.schema';
 import * as usersController from '../controllers/users.controller';
 import { Role } from '@prisma/client';
@@ -12,8 +13,8 @@ router.use(authenticate);
 // GET /api/users - All authenticated users can list (for directory)
 router.get('/', usersController.listUsers);
 
-// GET /api/users/departments - All authenticated
-router.get('/departments', usersController.getDepartments);
+// GET /api/users/departments - All authenticated (stable reference data)
+router.get('/departments', cacheControl(300), usersController.getDepartments);
 
 // GET /api/users/:id - All authenticated
 router.get('/:id', usersController.getUser);
